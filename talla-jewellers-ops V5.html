@@ -1,0 +1,2531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Talla Jewellers — Operations Suite</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#1D9E75;--teal-light:#E1F5EE;--teal-dark:#0F6E56;
+  --bg:#ffffff;--bg2:#f5f4f0;--bg3:#eceae3;
+  --border:#e0ddd4;--border2:#d0cdc4;
+  --text:#1a1915;--text2:#5f5e5a;--text3:#9b9890;
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0ede6;color:var(--text)}
+.hidden{display:none!important}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f0ede6}
+.cloud-loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#f0ede6;display:flex;align-items:center;justify-content:center;z-index:200}
+.cloud-loading-box{text-align:center;color:var(--text2);font-size:13px}
+.cloud-spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--teal);border-radius:50%;margin:0 auto 14px;animation:cloud-spin 0.8s linear infinite}
+@keyframes cloud-spin{to{transform:rotate(360deg)}}
+.login-sync-status{margin-top:14px;font-size:11px;color:var(--text3);text-align:center}
+.sync-status{font-size:10px;color:var(--text3);padding:0 14px 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer}
+.sync-status.syncing{color:var(--teal-dark)}
+.sync-status.error{color:#A32D2D}
+.sync-status i{font-size:12px}
+.login-box{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:32px;width:340px;box-shadow:0 4px 24px rgba(0,0,0,0.07)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo h1{font-size:20px;font-weight:600;color:var(--text)}
+.login-logo p{font-size:12px;color:var(--text2);margin-top:4px}
+.lf{margin-bottom:14px}
+.lf label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.lf input{width:100%;padding:9px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none}
+.lf input:focus{border-color:var(--teal)}
+.login-btn{width:100%;padding:10px;font-size:14px;font-weight:500;background:var(--teal);color:#fff;border:none;border-radius:var(--radius);cursor:pointer}
+.login-btn:hover{background:var(--teal-dark)}
+.login-error{font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:var(--radius);padding:8px 12px;margin-top:10px;display:none}
+.login-hint{margin-top:16px;padding:12px;background:var(--bg2);border-radius:var(--radius);font-size:11px;color:var(--text2);line-height:1.8}
+.login-hint strong{color:var(--text);display:block;margin-bottom:4px}
+
+/* APP LAYOUT */
+.app{display:flex;height:100vh;background:var(--bg3)}
+.sidebar{width:210px;flex-shrink:0;background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;padding:16px 0;overflow-y:auto}
+.sidebar-logo{padding:0 16px 14px;border-bottom:0.5px solid var(--border);margin-bottom:8px}
+.sidebar-logo h2{font-size:14px;font-weight:600;color:var(--text)}
+.sidebar-logo p{font-size:11px;color:var(--text2);margin-top:2px}
+.user-pill{margin:0 12px 10px;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);display:flex;align-items:center;gap:8px}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--teal-dark);flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:10px;color:var(--text2)}
+.logout-btn{padding:4px;cursor:pointer;color:var(--text3);background:none;border:none;font-size:14px}
+.nav-section{font-size:10px;color:var(--text3);padding:12px 16px 4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;transition:background 0.1s}
+.nav-item:hover{background:var(--bg2);color:var(--text)}
+.nav-item.active{background:var(--bg2);color:var(--text);font-weight:500}
+.nav-item i{font-size:16px}
+.main{flex:1;overflow-y:auto;padding:24px}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:18px;font-weight:600;color:var(--text)}
+.page-header p{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* STORE BAR */
+.store-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.store-btn{padding:6px 14px;font-size:12px;border-radius:20px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;transition:all 0.15s}
+.store-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.store-btn-ho{font-weight:600;border-color:var(--teal);color:var(--teal-dark);background:var(--teal-light)}
+.store-btn-ho.active{background:var(--teal-dark);border-color:var(--teal-dark);color:#fff}
+
+/* CARDS & LAYOUT */
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border-radius:var(--radius);padding:14px}
+.stat-label{font-size:12px;color:var(--text2);display:block}
+.stat-val{font-size:22px;font-weight:600;color:var(--text);display:block;margin-top:2px}
+.stat-sub{font-size:11px;color:var(--text3);display:block}
+
+/* BADGES */
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+.badge-green{background:#E1F5EE;color:#0F6E56}
+.badge-amber{background:#FAEEDA;color:#854F0B}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-blue{background:#E6F1FB;color:#185FA5}
+.badge-purple{background:#EEEDFE;color:#534AB7}
+.badge-gray{background:#F1EFE8;color:#5F5E5A}
+
+/* BUTTONS */
+.btn{padding:7px 16px;font-size:13px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;transition:background 0.1s}
+.btn:hover{background:var(--bg2)}
+.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-danger{background:#FCEBEB;border-color:#F09595;color:#A32D2D}
+.btn-warn{background:#FAEEDA;border-color:#FAC775;color:#854F0B}
+.btn-sm{font-size:11px;padding:4px 10px}
+
+/* FORMS */
+.input-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.input-row input,.input-row select{flex:1;min-width:100px;font-size:13px;padding:7px 10px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);outline:none}
+.input-row input:focus,.input-row select:focus{border-color:var(--teal)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.form-group input{width:100%;padding:9px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none}
+.form-group input:focus{border-color:var(--teal)}
+
+/* TABLES */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{text-align:left;padding:8px;color:var(--text2);border-bottom:0.5px solid var(--border);font-weight:500}
+.data-table td{padding:8px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+
+/* UTIL ROWS */
+.util-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.util-row:last-child{border-bottom:none}
+.util-qty{display:flex;align-items:center;justify-content:center;gap:8px}
+.util-qty button{width:26px;height:26px;border:0.5px solid var(--border2);background:var(--bg2);border-radius:6px;cursor:pointer;font-size:15px;color:var(--text);display:flex;align-items:center;justify-content:center}
+.util-qty span{min-width:28px;text-align:center;font-weight:600;font-size:13px}
+
+/* TABS */
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;background:var(--bg2);padding:4px;border-radius:var(--radius)}
+.tab{padding:6px 14px;font-size:12px;border-radius:6px;cursor:pointer;color:var(--text2);border:none;background:transparent;font-weight:500}
+.tab.active{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+
+/* CHECKLIST */
+.checklist-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border);font-size:13px;color:var(--text);flex-wrap:wrap}
+.checklist-item .cl-task-text,.checklist-item>span:first-of-type{flex-shrink:0}
+.maint-freq-badge,.maint-date-badge{flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center}
+.checklist-item:last-child{border-bottom:none}
+.checklist-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--teal);cursor:pointer;flex-shrink:0}
+.maint-checkbox-placeholder{display:inline-block;width:16px;height:16px;flex-shrink:0}
+.checklist-item.maint-not-due{opacity:0.6}
+.checklist-item.done span{text-decoration:line-through;color:var(--text3)}
+.progress-bar{background:var(--bg2);border-radius:4px;height:6px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;background:var(--teal);border-radius:4px;transition:width 0.3s}
+
+/* ROLES */
+.perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.perm-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.perm-item:nth-last-child(-n+2){border-bottom:none}
+.perm-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--teal);cursor:pointer;flex-shrink:0}
+.role-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+.role-card h4{font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.role-card p{font-size:11px;color:var(--text2);margin-bottom:10px}
+.role-perms{display:flex;flex-wrap:wrap;gap:4px}
+.perm-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--bg2);color:var(--text2)}
+.role-actions{display:flex;gap:6px;margin-top:10px}
+
+/* MESSAGES */
+.msg{font-size:12px;padding:8px 12px;border-radius:var(--radius);margin-bottom:12px;display:none}
+.msg-ok{background:#E1F5EE;color:#0F6E56}
+.msg-err{background:#FCEBEB;color:#A32D2D}
+.locked-banner{background:#FAEEDA;color:#854F0B;font-size:12px;padding:10px 14px;border-radius:var(--radius);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* PASSWORD STRENGTH */
+.strength-bar{height:4px;border-radius:2px;margin-top:6px;transition:all 0.3s;background:var(--bg2)}
+.strength-weak{background:#E24B4A;width:33%}
+.strength-medium{background:#EF9F27;width:66%}
+.strength-strong{background:#1D9E75;width:100%}
+
+/* MODAL */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-box{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;width:360px;max-width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+.modal-box h3{font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.modal-box p{font-size:12px;color:var(--text2);margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+/* CHECKLIST EDITABLE */
+.cl-delete-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);padding:2px 4px;border-radius:4px;opacity:0;transition:opacity 0.15s,color 0.15s;flex-shrink:0}
+.checklist-item:hover .cl-delete-btn{opacity:1}
+.cl-delete-btn:hover{color:#A32D2D}
+
+
+/* QUICK ACTIONS */
+.quick-action-btn{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;transition:all 0.15s;text-align:left;width:100%}
+.quick-action-btn:hover{background:var(--teal-light);border-color:var(--teal);color:var(--teal-dark)}
+.quick-action-btn:hover i{color:var(--teal)}
+.quick-action-btn i{font-size:18px;color:var(--text3);flex-shrink:0}
+.quick-action-label{font-size:13px;font-weight:500;color:var(--text);line-height:1.2}
+.quick-action-sub{font-size:11px;color:var(--text2);margin-top:1px}
+
+.tab.tab-danger{color:#A32D2D;background:none;border-color:transparent;margin-left:4px;opacity:0.6}
+.tab.tab-danger:hover{opacity:1;background:#FCEBEB;border-color:#F5BABA}
+
+/* UTIL MODE BAR */
+.util-mode-bar{display:flex;gap:8px;margin-bottom:16px}
+.util-mode-btn{padding:8px 18px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s}
+.util-mode-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+
+/* UTILISATION STOCK TABLE */
+.util-header-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:6px 0 8px;border-bottom:0.5px solid var(--border2);margin-bottom:2px}
+.util-col-label{font-size:11px;color:var(--text3);font-weight:500;text-align:center;text-transform:uppercase;letter-spacing:0.04em}
+.util-item-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--border);align-items:center}
+.util-item-row:last-child{border-bottom:none}
+.util-row-warn{background:linear-gradient(90deg,#FAEEDA22,transparent)}
+.util-row-empty{background:linear-gradient(90deg,#FCEBEB22,transparent)}
+.util-col-name{display:flex;flex-direction:column;gap:4px}
+.util-col-stock{text-align:center}
+.util-item-name{font-size:13px;color:var(--text);font-weight:500}
+.util-reorder-edit,.util-reorder-display{font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:4px}
+.util-reorder-edit input{width:42px;padding:2px 4px;font-size:11px;border:0.5px solid var(--border2);border-radius:4px;background:var(--bg);color:var(--text);outline:none}
+.util-stock-val{font-size:14px;color:var(--text)}
+.util-stock-input{width:64px;padding:4px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--teal-light);color:var(--teal-dark);font-weight:600;text-align:center;outline:none}
+.util-stock-input:focus{border-color:var(--teal)}
+
+/* HISTORY CARDS */
+.hist-week-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.hist-week-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);user-select:none;transition:background 0.1s}
+.hist-week-header:hover{background:var(--teal-light)}
+.hist-chevron{font-size:12px;color:var(--text3);transition:transform 0.2s;flex-shrink:0}
+.hist-week-body{padding:0 16px 14px;border-top:0.5px solid var(--border)}
+.hist-summary-row{display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 10px}
+.hist-summary-chip{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg);border:0.5px solid var(--border2);border-radius:20px}
+.hist-chip-total{background:var(--teal-light);border-color:var(--teal)}
+.hist-chip-name{font-size:12px;color:var(--text2)}
+.hist-chip-val{font-size:13px;font-weight:600;color:var(--text)}
+.hist-chip-total .hist-chip-val{color:var(--teal-dark)}
+.hist-daily-table{overflow-x:auto;margin-top:4px}
+.hist-daily-header,.hist-daily-row{display:grid;gap:4px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px;align-items:center}
+.hist-daily-header{font-weight:600;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:0.03em}
+.hist-daily-row{color:var(--text)}
+.hist-daily-row:last-child{border-bottom:none}
+
+/* TABLE SCROLL WRAPPER */
+.table-scroll{overflow-x:auto}
+.table-scroll table{min-width:560px}
+
+/* SIDEBAR TOGGLE (mobile) */
+.sidebar-toggle{display:none;position:fixed;top:12px;left:12px;z-index:210;width:38px;height:38px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg);box-shadow:0 2px 10px rgba(0,0,0,0.12);align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text)}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:170}
+.sidebar-backdrop.show{display:block}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:900px){
+  .sidebar-toggle{display:flex}
+  .sidebar{position:fixed;top:0;left:0;height:100vh;z-index:180;transform:translateX(-100%);transition:transform 0.22s ease;box-shadow:2px 0 20px rgba(0,0,0,0.15);width:240px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:64px 14px 20px}
+  .two-col{grid-template-columns:1fr}
+  .perm-grid{grid-template-columns:1fr}
+}
+
+@media (max-width:640px){
+  .login-box{width:100%;max-width:340px;padding:24px}
+  .page-header h1{font-size:16px}
+  .stat-grid{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+  .stat-card{padding:10px}
+  .stat-val{font-size:18px}
+  .card{padding:12px}
+  .util-header-row,.util-item-row{grid-template-columns:1.6fr 0.9fr 0.9fr 0.9fr 0.9fr;gap:4px}
+  .util-col-label{font-size:9px;letter-spacing:0}
+  .util-item-name{font-size:12px}
+  .util-stock-val{font-size:12px}
+  .util-stock-input{width:46px;padding:3px 4px;font-size:12px}
+  .util-qty button{width:22px;height:22px;font-size:13px}
+  .util-qty span{min-width:22px;font-size:12px}
+  .tab-bar{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .tab{flex-shrink:0;white-space:nowrap}
+  .util-mode-bar{flex-wrap:wrap}
+  .util-mode-btn{flex:1;text-align:center;font-size:12px;padding:8px 10px}
+  .input-row input,.input-row select{min-width:0;flex:1 1 100%}
+  .hist-daily-header,.hist-daily-row{min-width:max-content}
+  .util-row{flex-wrap:wrap;gap:8px}
+}
+
+@media (max-width:420px){
+  .util-header-row,.util-item-row{grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:3px}
+  .util-col-label{font-size:8px}
+  .login-box{padding:20px}
+}
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="cloud-loading-overlay" class="cloud-loading-overlay">
+  <div class="cloud-loading-box">
+    <div class="cloud-spinner"></div>
+    <p id="cloud-loading-text">Connecting to Talla Operations Cloud…</p>
+  </div>
+</div>
+
+<div id="login-screen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>Talla Jewellers</h1>
+      <p>Operations Suite — Sign in to continue</p>
+    </div>
+    <div class="lf"><label>Username</label><input type="text" id="lu" placeholder="Enter your username" autocomplete="off"/></div>
+    <div class="lf"><label>Password</label><input type="password" id="lp" placeholder="Enter your password"/></div>
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-error" id="login-error">Incorrect username or password. Please try again.</div>
+    <div class="login-sync-status" id="login-sync-status"></div>
+  </div>
+</div>
+
+<!-- ADMIN RESET MODAL -->
+<div id="reset-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>Reset password</h3>
+    <p>Set a new password for <strong id="reset-target-name"></strong></p>
+    <div class="form-group"><label>New password</label><input type="password" id="reset-new-pass" placeholder="Enter new password" oninput="checkStrength('reset-new-pass','reset-strength')"/></div>
+    <div class="strength-bar" id="reset-strength"></div>
+    <div style="font-size:11px;margin-top:4px;color:var(--text3)" id="reset-strength-label"></div>
+    <div class="form-group" style="margin-top:12px"><label>Confirm new password</label><input type="password" id="reset-confirm-pass" placeholder="Confirm password"/></div>
+    <div class="msg" id="reset-modal-msg"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeResetModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmReset()">Reset password</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAINT EDIT MODAL -->
+<div id="maint-edit-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>Edit reminder schedule</h3>
+    <p id="maint-edit-taskname"></p>
+    <div class="form-group">
+      <label>Frequency</label>
+      <select id="edit-maint-freq" onchange="updateEditMaintFreqOptions()" style="width:100%;padding:9px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+        <option value="yearly">Yearly</option>
+      </select>
+    </div>
+    <div class="form-group hidden" id="edit-maint-week-group">
+      <label>Week of the month</label>
+      <select id="edit-maint-week" style="width:100%;padding:9px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+        <option value="1">Every 1st week</option>
+        <option value="2">Every 2nd week</option>
+        <option value="3">Every 3rd week</option>
+        <option value="4">Every 4th week</option>
+      </select>
+    </div>
+    <div class="form-group hidden" id="edit-maint-month-group">
+      <label>Repeat interval</label>
+      <select id="edit-maint-month" style="width:100%;padding:9px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+        <option value="1">Every month</option>
+        <option value="2">Every 2nd month</option>
+        <option value="3">Every 3rd month</option>
+        <option value="4">Every 4th month</option>
+        <option value="5">Every 5th month</option>
+        <option value="6">Every 6th month</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Reminder date</label>
+      <input type="date" id="edit-maint-date"/>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Leave blank for no date reminder. Past dates can't be selected.</div>
+    </div>
+    <div class="msg" id="maint-edit-msg"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeMaintEditModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMaintEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen" class="app hidden">
+  <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><h2>Talla Jewellers</h2><p>Operations Suite</p></div>
+    <div class="user-pill">
+      <div class="user-avatar" id="u-av">TJ</div>
+      <div class="user-info"><div class="user-name" id="u-name">-</div><div class="user-role" id="u-role">-</div></div>
+      <button class="logout-btn" onclick="location.reload()" title="Refresh app"><i class="ti ti-refresh"></i></button>
+      <button class="logout-btn" onclick="doLogout()" title="Sign out"><i class="ti ti-logout"></i></button>
+    </div>
+    <div class="sync-status" id="sync-status" onclick="manualSync()" title="Click to sync now"><i class="ti ti-cloud"></i><span id="sync-status-text">Not synced yet</span></div>
+    <span class="nav-section">Daily Ops</span>
+    <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+    <div class="nav-item" id="nav-checklist" onclick="showPage('checklist',this)"><i class="ti ti-checklist"></i> Checklists &amp; Jobs</div>
+    <span class="nav-section">Business</span>
+    <div class="nav-item" id="nav-utilisation" onclick="showPage('utilisation',this)"><i class="ti ti-chart-bar"></i> Utilisation</div>
+    <span class="nav-section">People</span>
+    <div class="nav-item" id="nav-staff" onclick="showPage('staff',this)"><i class="ti ti-id-badge"></i> Staff & HR</div>
+    <span class="nav-section" id="admin-section">Admin</span>
+    <div class="nav-item" id="nav-users" onclick="showPage('users',this)"><i class="ti ti-user-plus"></i> Users</div>
+    <div class="nav-item" id="nav-roles" onclick="showPage('roles',this)"><i class="ti ti-shield"></i> Roles & permissions</div>
+    <span class="nav-section">Account</span>
+    <div class="nav-item" id="nav-myaccount" onclick="showPage('myaccount',this)"><i class="ti ti-user-circle"></i> My account</div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1><span id="dash-greeting">Good morning</span>, <span id="dash-name">-</span></h1>
+          <p id="dash-date"></p>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div id="dash-clock" style="font-size:26px;font-weight:600;color:var(--text);letter-spacing:0.02em;font-variant-numeric:tabular-nums">--:--:--</div>
+          <div id="dash-ampm" style="font-size:11px;color:var(--text3);text-align:right;margin-top:1px"></div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><span class="stat-label">Stores opened</span><span class="stat-val" id="dash-stat-opened">0/4</span><span class="stat-sub">today</span></div>
+        <div class="stat-card"><span class="stat-label">Out of stock</span><span class="stat-val" id="dash-stat-outofstock">0</span><span class="stat-sub">items</span></div>
+        <div class="stat-card"><span class="stat-label">Reordering</span><span class="stat-val" id="dash-stat-reorder">0</span><span class="stat-sub">low stock items</span></div>
+        <div class="stat-card"><span class="stat-label">Staff present</span><span class="stat-val" id="dash-stat-staff">0/0</span><span class="stat-sub" id="dash-stat-staff-sub">today</span></div>
+      </div>
+      <div class="two-col">
+        <div class="card"><h3>Store opening status</h3><div id="dash-store-status"></div></div>
+        <div class="card"><h3>Low stock alerts</h3>
+          <div id="dash-lowstock-store-bar" class="store-bar" style="margin-bottom:10px"></div>
+          <div id="dash-lowstock-list"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Consumption trend</h3>
+        <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--text2);font-weight:500">View:</label>
+          <select id="dash-chart-view" onchange="buildDashConsumptionChart()" style="padding:6px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div id="dash-chart-store-bar" class="store-bar" style="margin-bottom:10px"></div>
+        <div id="dash-chart-container"></div>
+      </div>
+    </div>
+
+    <!-- CHECKLISTS -->
+    <div id="page-checklist" class="page">
+      <div class="page-header"><h1>Checklists &amp; Jobs</h1><p>Store checklists and maintenance reminders</p></div>
+      <div id="cl-store-bar" class="store-bar"></div>
+      <div class="tab-bar">
+        <button class="tab active" onclick="switchClTab(this,'cl-maint')">Gen. Maintenance Reminder</button>
+        <button class="tab" onclick="switchClTab(this,'cl-checklist')">Store Checklists</button>
+      </div>
+
+      <div id="cl-checklist" class="hidden">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <h3 style="margin:0">Store checklist <span class="badge badge-amber" id="checklist-prog">0 / 0 done</span></h3>
+          </div>
+          <div id="checklist-list"></div>
+          <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" id="checklist-bar" style="width:0%"></div></div>
+        </div>
+        <div class="card" id="cl-add-checklist" style="display:none">
+          <h3>Add task to checklist</h3>
+          <div class="input-row">
+            <input type="text" id="new-checklist-task" placeholder="e.g. Count opening cash float"/>
+            <button class="btn btn-primary" onclick="addChecklistTask('checklist')">Add task</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="cl-maint">
+        <div class="util-mode-bar">
+          <button class="util-mode-btn active" id="maintmode-current" onclick="switchMaintMode('current')">&#9654; Current</button>
+          <button class="util-mode-btn" id="maintmode-history" onclick="switchMaintMode('history')">&#128197; History</button>
+        </div>
+        <div id="maint-mode-current">
+          <div class="tab-bar" id="maint-cat-tabs"></div>
+          <div id="maint-cat-panels"></div>
+          <div class="card" id="cl-add-maint" style="display:none">
+            <h3>Add reminder to this category</h3>
+            <div class="msg" id="maint-add-msg"></div>
+            <div class="input-row">
+              <input type="text" id="new-maint-task" placeholder="e.g. Service air conditioning unit"/>
+              <select id="new-maint-freq" onchange="updateMaintFreqOptions()">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+              <select id="new-maint-week" class="hidden">
+                <option value="1">Every 1st week</option>
+                <option value="2">Every 2nd week</option>
+                <option value="3">Every 3rd week</option>
+                <option value="4">Every 4th week</option>
+              </select>
+              <select id="new-maint-month" class="hidden">
+                <option value="1">Every month</option>
+                <option value="2">Every 2nd month</option>
+                <option value="3">Every 3rd month</option>
+                <option value="4">Every 4th month</option>
+                <option value="5">Every 5th month</option>
+                <option value="6">Every 6th month</option>
+              </select>
+              <input type="date" id="new-maint-date" title="Reminder date" style="max-width:160px"/>
+              <button class="btn btn-primary" onclick="addMaintTask()">Add task</button>
+            </div>
+          </div>
+          <div class="card" id="maint-add-cat-card">
+            <h3>Add new category</h3>
+            <div class="input-row">
+              <input type="text" id="maint-new-cat-name" placeholder="e.g. Electrical" style="max-width:220px"/>
+              <button class="btn btn-primary" onclick="addMaintCategory()">Add category</button>
+            </div>
+          </div>
+        </div>
+        <div id="maint-mode-history" class="hidden">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <label style="font-size:12px;color:var(--text2);font-weight:500">View:</label>
+            <select id="maint-hist-view" onchange="buildMaintHistoryTabs()" style="padding:6px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+          <div class="tab-bar" id="maint-hist-tabs"></div>
+          <div id="maint-hist-panels"></div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- UTILISATION -->
+    <div id="page-utilisation" class="page">
+      <div class="page-header"><h1>Utilisation report</h1><p>Opening stock &amp; daily consumption by category</p></div>
+      <div id="util-store-bar" class="store-bar"></div>
+      <div class="util-mode-bar">
+        <button class="util-mode-btn active" id="utilmode-current" onclick="switchUtilMode('current')">&#9654; Current Stock</button>
+        <button class="util-mode-btn" id="utilmode-history" onclick="switchUtilMode('history')">&#128197; History</button>
+      </div>
+      <div id="util-mode-current">
+        <div class="tab-bar" id="util-cat-tabs"></div>
+        <div class="msg" id="util-msg"></div>
+        <div id="util-cat-panels"></div>
+        <div class="card" id="util-add-item-card"><h3>Add item to a category</h3>
+          <div class="input-row">
+            <input type="text" id="util-new-name" placeholder="e.g. Coconut Water"/>
+            <select id="util-new-cat"></select>
+            <input type="number" id="util-new-reorder" min="0" value="5" title="Low stock alert level" placeholder="Reorder level" style="max-width:130px"/>
+            <button class="btn btn-primary" onclick="addUtilItem()">Add item</button>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">"Reorder level" — show a "Low stock" alert when remaining stock drops to this number or below.</div>
+        </div>
+        <div class="card" id="util-add-cat-card">
+          <h3>Add new category</h3>
+          <div class="input-row">
+            <input type="text" id="util-new-cat-name" placeholder="e.g. Housekeeping" style="max-width:220px"/>
+            <button class="btn btn-primary" onclick="addUtilCategory()">Add category</button>
+          </div>
+        </div>
+      </div>
+      <div id="util-mode-history" class="hidden">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--text2);font-weight:500">View:</label>
+          <select id="util-hist-view" onchange="buildUtilHistoryTabs()" style="padding:6px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div class="tab-bar" id="util-hist-tabs"></div>
+        <div id="util-hist-panels"></div>
+      </div>
+    </div>
+
+    <!-- STAFF -->
+    <div id="page-staff" class="page">
+      <div class="page-header"><h1>Staff & HR</h1><p>Attendance and team records</p></div>
+      <div id="staff-store-bar" class="store-bar"></div>
+      <div class="card"><h3>Today's attendance <span id="staff-summary" style="font-size:12px;color:var(--text2);font-weight:400;margin-left:8px"></span></h3><div id="staff-list"></div></div>
+      <div class="card" id="staff-add-card">
+        <h3>Add staff member</h3>
+        <div class="input-row">
+          <input type="text" id="staff-new-name" placeholder="Full name" style="max-width:200px"/>
+          <input type="text" id="staff-new-role" placeholder="Role e.g. Cashier" style="max-width:160px"/>
+          <button class="btn btn-primary" onclick="addStaffMember()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div id="page-users" class="page">
+      <div class="page-header"><h1>User accounts</h1><p>Create, manage and reset passwords for all users</p></div>
+      <div class="card">
+        <h3>Add new user</h3>
+        <div class="msg" id="user-msg"></div>
+        <div class="input-row">
+          <input type="text" id="nu-user" placeholder="Username" style="max-width:130px"/>
+          <input type="text" id="nu-full" placeholder="Full name"/>
+          <input type="password" id="nu-pass" placeholder="Password" style="max-width:130px"/>
+          <select id="nu-role" style="max-width:160px"></select>
+          <select id="nu-store"><option value="all">All Stores</option></select>
+          <button class="btn btn-primary" onclick="addUser()">Add user</button>
+        </div>
+        <div class="table-scroll"><table class="data-table"><thead><tr><th>Username</th><th>Full name</th><th>Role</th><th>Store</th><th>Actions</th></tr></thead><tbody id="users-body"></tbody></table></div>
+      </div>
+      <div class="card" id="manage-stores-card">
+        <h3>Manage stores</h3>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Adding or removing a store updates it across the entire app — user assignments, staff and dashboard.</p>
+        <div class="input-row" style="margin-bottom:14px">
+          <input type="text" id="new-store-name" placeholder="e.g. Rehari Colony" style="max-width:220px"/>
+          <button class="btn btn-primary" onclick="addStore()">Add store</button>
+        </div>
+        <div id="stores-list"></div>
+      </div>
+    </div>
+    <div id="page-roles" class="page">
+      <div class="page-header"><h1>Roles & permissions</h1><p>Create roles and set what each can access</p></div>
+      <div class="card">
+        <h3>Create new role</h3>
+        <div class="msg" id="role-msg"></div>
+        <div class="input-row" style="margin-bottom:16px">
+          <input type="text" id="new-role-name" placeholder="Role name (e.g. Cashier, Supervisor)" style="max-width:260px"/>
+          <select id="new-role-color" style="max-width:140px"><option value="badge-green">Green</option><option value="badge-blue">Blue</option><option value="badge-purple">Purple</option><option value="badge-amber">Amber</option><option value="badge-gray">Gray</option></select>
+          <button class="btn btn-primary" onclick="createRole()">Create role</button>
+        </div>
+        <div id="roles-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+      </div>
+      <div class="card hidden" id="edit-perm-card">
+        <h3>Editing permissions for: <span id="editing-role-name" style="color:var(--teal)"></span></h3>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Tick the modules this role can access. Changes apply immediately.</p>
+        <div class="perm-grid" id="perm-grid"></div>
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="savePerms()">Save permissions</button>
+          <button class="btn" onclick="document.getElementById('edit-perm-card').classList.add('hidden')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY ACCOUNT -->
+    <div id="page-myaccount" class="page">
+      <div class="page-header"><h1>My account</h1><p>View your profile and change your password</p></div>
+      <div class="two-col">
+        <div class="card"><h3>Profile</h3>
+          <div class="util-row"><span style="color:var(--text2)">Full name</span><span id="profile-name" style="font-weight:500"></span></div>
+          <div class="util-row"><span style="color:var(--text2)">Username</span><span id="profile-username"></span></div>
+          <div class="util-row"><span style="color:var(--text2)">Role</span><span id="profile-role"></span></div>
+          <div class="util-row"><span style="color:var(--text2)">Store access</span><span id="profile-store"></span></div>
+        </div>
+        <div class="card"><h3>Change password</h3>
+          <div class="msg" id="chpw-msg"></div>
+          <div class="form-group"><label>Current password</label><input type="password" id="chpw-current" placeholder="Enter current password"/></div>
+          <div class="form-group">
+            <label>New password</label>
+            <input type="password" id="chpw-new" placeholder="Enter new password" oninput="checkStrength('chpw-new','chpw-strength')"/>
+            <div class="strength-bar" id="chpw-strength"></div>
+            <div style="font-size:11px;margin-top:4px;color:var(--text3)" id="chpw-strength-label"></div>
+          </div>
+          <div class="form-group"><label>Confirm new password</label><input type="password" id="chpw-confirm" placeholder="Confirm new password"/></div>
+          <button class="btn btn-primary" onclick="changePassword()">Update password</button>
+        </div>
+      </div>
+      <div class="card" style="border-color:#F09595">
+        <h3 style="color:#A32D2D">Sign out</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">You will be returned to the login screen.</p>
+        <button class="btn btn-danger" onclick="doLogout()">Sign out of this account</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const ALL_PERMS=[
+  {key:"dashboard",label:"Dashboard"},
+  {key:"checklist",label:"Checklists — view & tick"},
+  {key:"checklist_edit",label:"Checklists — add/edit/delete tasks"},
+  {key:"utilisation",label:"Utilisation — view & log usage"},
+  {key:"utilisation_edit",label:"Utilisation — manage stock & categories"},
+  {key:"staff",label:"Staff & HR — view & mark attendance"},
+  {key:"staff_edit",label:"Staff & HR — add/remove staff"},
+  {key:"stores",label:"Manage stores"},
+  {key:"users",label:"Manage users"},
+  {key:"roles",label:"Manage roles"},
+];
+
+let roles=[
+  {id:"management",name:"Management",color:"badge-purple",perms:ALL_PERMS.map(p=>p.key),protected:true},
+  {id:"admin",name:"Admin",color:"badge-blue",perms:[],protected:false},
+  {id:"manager",name:"Store Manager",color:"badge-green",perms:["dashboard","checklist","utilisation","staff"],protected:false},
+  {id:"viewer",name:"Viewer",color:"badge-gray",perms:["dashboard","utilisation"],protected:false},
+];
+
+let users=[
+  {username:"management",password:"manage123",fullname:"Management (You)",roleId:"management",store:"all"},
+  {username:"admin",password:"admin123",fullname:"Admin",roleId:"admin",store:"all"},
+  {username:"store1",password:"pass1",fullname:"Manager Gandhi Nagar",roleId:"manager",store:"Gandhi Nagar"},
+  {username:"store2",password:"pass2",fullname:"Manager Janipur",roleId:"manager",store:"Janipur"},
+  {username:"store3",password:"pass3",fullname:"Manager Udhampur",roleId:"manager",store:"Udhampur"},
+  {username:"store4",password:"pass4",fullname:"Manager Lakhdata Bazar",roleId:"manager",store:"Lakhdata Bazar"},
+];
+
+
+// Real utilisation history, recorded daily at rollover and persisted/synced as part of storeData.
+// Returns records in the same shape the history views expect: [{date, cat, entries:[{name,qty}]}]
+function getUtilHistory(s){
+  const sd=storeData[s];if(!sd)return [];
+  const hist=sd.utilHistory||{};
+  const records=[];
+  Object.keys(hist).forEach(date=>{
+    const dayRec=hist[date];
+    Object.keys(dayRec).forEach(catId=>{
+      const entries=Object.entries(dayRec[catId]).map(([name,qty])=>({name,qty}));
+      records.push({date,cat:catId,entries});
+    });
+  });
+  return records;
+}
+
+let stores=["Gandhi Nagar","Janipur","Udhampur","Lakhdata Bazar"];
+
+// Returns a Date object as a local-time "YYYY-MM-DD" string (avoids UTC shift from toISOString)
+function fmtDateLocal(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function todayStr(){return fmtDateLocal(new Date());}
+
+// The app went live on this date — history views won't show empty periods before this.
+const APP_START_DATE='2026-06-15';
+
+const DEFAULT_CHECKLIST_TASKS=[
+  "Unlock store and disable alarm","Switch on all display lights","Count and verify opening cash float","Inspect all display cases for damage","Ensure all jewellery is polished and arranged","Check CCTV cameras are working","Turn on POS system and verify connectivity","Log opening checklist in app",
+  "Count and record closing cash float","Lock all display cases securely","Set the alarm system","Turn off all display lights","Lock store entrance","Submit daily utilisation report"
+];
+const DEFAULT_MAINT_TASKS=["Check AC filters and servicing schedule","Inspect lighting and replace faulty bulbs","Check fire extinguisher expiry dates","Inspect signage and branding for wear","Check plumbing and washroom fittings","Pest control inspection due date","Review CCTV storage and backups","Check generator/UPS battery health"];
+function defaultMaintCategories(){
+  return [{id:"maint-general",label:"General",tasks:DEFAULT_MAINT_TASKS.map(name=>({name,frequency:"daily",weekOf:null,monthInterval:null,date:null,completions:{}}))}];
+}
+
+// Per-store data — keyed by store name
+let storeData={};
+function initStoreData(s){
+  if(storeData[s]) return;
+  storeData[s]={
+    checklistTasks:[...DEFAULT_CHECKLIST_TASKS],
+    maintCategories:defaultMaintCategories(),
+    openChecks:{},
+    closeChecks:{},
+    staff:[],
+    utilCategories:[
+      {id:"util-fb",  label:"Food & Beverage", items:[{name:"Water Bottle 500ml",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Coconut Water",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Tea / Chai",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Coffee",opening:0,consumed:0,todayQty:0,reorderLevel:5}]},
+      {id:"util-pkg", label:"Packaging",        items:[{name:"Gift Box (S)",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Gift Box (M)",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Gift Box (L)",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Tissue Paper",opening:0,consumed:0,todayQty:0,reorderLevel:5}]},
+      {id:"util-bags",label:"Bags",             items:[{name:"Jewellery Bag (S)",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Jewellery Bag (M)",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Carry Bag",opening:0,consumed:0,todayQty:0,reorderLevel:5}]},
+      {id:"util-other",label:"Other",           items:[{name:"Polish Cloth",opening:0,consumed:0,todayQty:0,reorderLevel:5},{name:"Price Tags",opening:0,consumed:0,todayQty:0,reorderLevel:5}]}
+    ],
+    openedDate:null,
+    openedTime:null,
+    utilLastDate:todayStr(),
+    utilHistory:{}
+  };
+}
+function initAllStores(){ stores.forEach(s=>initStoreData(s)); }
+
+// Carries closing stock forward as next day's opening stock, resets daily counters,
+// and records the day's actual consumption into utilHistory.
+function rolloverUtilStock(s){
+  const sd=storeData[s];if(!sd)return;
+  const today=todayStr();
+  if(sd.utilLastDate===today)return;
+  if(sd.utilLastDate){
+    if(!sd.utilHistory)sd.utilHistory={};
+    const dayRecord={};
+    sd.utilCategories.forEach(cat=>{
+      dayRecord[cat.id]={};
+      cat.items.forEach(item=>{
+        dayRecord[cat.id][item.name]=item.todayQty||0;
+      });
+    });
+    sd.utilHistory[sd.utilLastDate]=dayRecord;
+    sd.utilCategories.forEach(cat=>{
+      cat.items.forEach(item=>{
+        const remaining=Math.max(0,item.opening-item.consumed-item.todayQty);
+        item.opening=remaining;
+        item.consumed=0;
+        item.todayQty=0;
+      });
+    });
+  }
+  sd.utilLastDate=today;
+}
+
+// Active store for admin navigation (used by checklists, util, staff)
+let activeStore=null;
+function getActiveStore(){ return activeStore||(currentUser&&currentUser.store!=="all"?currentUser.store:stores[0]); }
+let currentUser=null;
+let editingRoleId=null;
+let resetTargetUsername=null;
+
+function getRoleById(id){return roles.find(r=>r.id===id)||{name:"Unknown",color:"badge-gray",perms:[]}}
+function hasPerm(p){if(!currentUser)return false;return getRoleById(currentUser.roleId).perms.includes(p);}
+function isAdminLevel(){if(!currentUser)return false;const id=getRoleById(currentUser.roleId).id;return id==='admin'||id==='management';}
+function getUserByUsername(u){return users.find(x=>x.username===u)}
+
+document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+function doLogin(){
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value;
+  const found=getUserByUsername(u);
+  const err=document.getElementById('login-error');
+  if(!found||found.password!==p){err.style.display='block';return;}
+  err.style.display='none';currentUser=found;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  saveSession();
+  initApp();
+}
+
+function doLogout(){
+  manualSync();
+  stopAutoSync();
+  clearSession();
+  currentUser=null;
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('lu').value='';document.getElementById('lp').value='';
+}
+
+function initApp(){
+  const r=getRoleById(currentUser.roleId);
+  document.getElementById('u-name').textContent=currentUser.fullname;
+  document.getElementById('u-role').textContent=r.name;
+  document.getElementById('u-av').textContent=currentUser.fullname.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('dash-name').textContent=currentUser.fullname.split(' ')[0];
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  startClock();
+  initAllStores();
+  activeStore=currentUser.store!=="all"?currentUser.store:stores[0];
+  buildProfile();applyNavPermissions();buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();
+  rebuildChecklists();
+  buildUtil();buildStaff();buildUsersTable();buildRolesGrid();populateRoleSelect();populateStoreSelect();buildStoresList();
+  showPage('dashboard',document.getElementById('nav-dashboard'));
+  startAutoSync();
+}
+
+function buildProfile(){
+  const r=getRoleById(currentUser.roleId);
+  document.getElementById('profile-name').textContent=currentUser.fullname;
+  document.getElementById('profile-username').textContent=currentUser.username;
+  document.getElementById('profile-role').innerHTML=`<span class="badge ${r.color}">${r.name}</span>`;
+  document.getElementById('profile-store').textContent=currentUser.store==='all'?'All Stores':currentUser.store;
+}
+
+function applyNavPermissions(){
+  const map={dashboard:'nav-dashboard',checklist:'nav-checklist',utilisation:'nav-utilisation',staff:'nav-staff',users:'nav-users',roles:'nav-roles'};
+  const editMap={checklist:'checklist_edit',utilisation:'utilisation_edit',staff:'staff_edit'};
+  Object.entries(map).forEach(([perm,navId])=>{
+    const el=document.getElementById(navId);if(!el)return;
+    const v=hasPerm(perm)||(editMap[perm]&&hasPerm(editMap[perm]));
+    el.classList.toggle('hidden',!v);
+  });
+  const as=document.getElementById('admin-section');
+  if(as)as.classList.toggle('hidden',!hasPerm('users')&&!hasPerm('roles'));
+  const storesCard=document.getElementById('manage-stores-card');
+  if(storesCard)storesCard.classList.toggle('hidden',!hasPerm('stores'));
+}
+
+function buildDashStoreStatus(){
+  const el=document.getElementById('dash-store-status');el.innerHTML='';
+  const today=todayStr();
+  const show=currentUser.store==='all'?stores:[currentUser.store];
+  const canOpen=isAdminLevel();
+
+  let openedCount=0;
+  stores.forEach(s=>{const sd=storeData[s];if(sd&&sd.openedDate===today)openedCount++;});
+  const statEl=document.getElementById('dash-stat-opened');
+  if(statEl)statEl.textContent=`${openedCount}/${stores.length}`;
+
+  show.forEach(s=>{
+    const sd=storeData[s];if(!sd)return;
+    const isOpen=sd.openedDate===today;
+    const allowBtn=canOpen||currentUser.store===s;
+    let statusHtml;
+    if(isOpen){
+      statusHtml=`<span class="badge badge-green">Open${sd.openedTime?' · '+sd.openedTime:''}</span>`;
+    } else if(allowBtn){
+      statusHtml=`<button class="btn btn-sm btn-primary" onclick="markStoreOpen('${s}')">OPEN</button>`;
+    } else {
+      statusHtml=`<span class="badge badge-gray">Not opened</span>`;
+    }
+    el.innerHTML+=`<div class="util-row"><span>${s}</span>${statusHtml}</div>`;
+  });
+}
+
+function markStoreOpen(storeName){
+  const sd=storeData[storeName];if(!sd)return;
+  sd.openedDate=todayStr();
+  sd.openedTime=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  buildDashStoreStatus();
+}
+
+let dashLowStockStore=null;
+
+function buildDashStockStats(){
+  let outOfStock=0,reorder=0;
+  stores.forEach(s=>{
+    getLowStockItems(s).forEach(it=>{
+      if(it.isEmpty)outOfStock++;else reorder++;
+    });
+  });
+  const oosEl=document.getElementById('dash-stat-outofstock');if(oosEl)oosEl.textContent=outOfStock;
+  const reEl=document.getElementById('dash-stat-reorder');if(reEl)reEl.textContent=reorder;
+}
+
+function buildDashStaffStat(){
+  const el=document.getElementById('dash-stat-staff');if(!el)return;
+  const subEl=document.getElementById('dash-stat-staff-sub');
+  let storesToCount;
+  let isAllStores;
+  if(currentUser.store!=='all'){
+    storesToCount=[currentUser.store];
+    isAllStores=false;
+  } else {
+    isAllStores=!dashLowStockStore||dashLowStockStore==='HO';
+    storesToCount=isAllStores?stores:[dashLowStockStore];
+  }
+  let present=0,total=0;
+  storesToCount.forEach(s=>{
+    const sd=storeData[s];if(!sd)return;
+    sd.staff.forEach(st=>{total++;if(st.attendance==='present')present++;});
+  });
+  el.textContent=`${present}/${total}`;
+  if(subEl)subEl.textContent=isAllStores?'across all stores':'today';
+}
+
+function buildDashLowStockBar(){
+  buildDashStockStats();
+  buildDashStaffStat();
+  const bar=document.getElementById('dash-lowstock-store-bar');if(!bar)return;
+  if(currentUser.store!=='all'){
+    bar.style.display='none';
+    dashLowStockStore=currentUser.store;
+    buildDashLowStock();
+    return;
+  }
+  bar.style.display='flex';bar.innerHTML='';
+  if(!dashLowStockStore)dashLowStockStore='HO';
+
+  const hoBtn=document.createElement('button');
+  hoBtn.className='store-btn store-btn-ho'+(dashLowStockStore==='HO'?' active':'');
+  hoBtn.innerHTML='<i class="ti ti-building" style="margin-right:4px"></i>All Stores';
+  hoBtn.onclick=()=>{dashLowStockStore='HO';buildDashLowStockBar();};
+  bar.appendChild(hoBtn);
+
+  stores.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='store-btn'+(dashLowStockStore===s?' active':'');
+    btn.textContent=s;
+    btn.onclick=()=>{dashLowStockStore=s;buildDashLowStockBar();};
+    bar.appendChild(btn);
+  });
+
+  buildDashLowStock();
+}
+
+function getLowStockItems(storeName){
+  rolloverUtilStock(storeName);
+  const sd=storeData[storeName];if(!sd)return [];
+  const out=[];
+  sd.utilCategories.forEach(cat=>{
+    cat.items.forEach(item=>{
+      const remaining=Math.max(0,item.opening-item.consumed-item.todayQty);
+      const isEmpty=item.opening>0&&remaining===0;
+      const reorderLevel=item.reorderLevel||0;
+      const isLow=item.opening>0&&!isEmpty&&reorderLevel>0&&remaining<=reorderLevel;
+      if(isEmpty||isLow)out.push({name:item.name,remaining,isEmpty,store:storeName});
+    });
+  });
+  return out;
+}
+
+function buildDashLowStock(){
+  const el=document.getElementById('dash-lowstock-list');if(!el)return;
+  let items=[];
+  if(dashLowStockStore==='HO'){
+    stores.forEach(s=>{items=items.concat(getLowStockItems(s));});
+  } else {
+    items=getLowStockItems(dashLowStockStore);
+  }
+  if(!items.length){el.innerHTML='<p style="color:var(--text3);font-size:13px;padding:8px 0">No low stock items 🎉</p>';return;}
+  el.innerHTML=items.map(it=>{
+    const badge=it.isEmpty?`<span class="badge badge-red">Out of stock</span>`:`<span class="badge badge-amber">${it.remaining} left</span>`;
+    const storeLabel=dashLowStockStore==='HO'?` <span style="font-size:11px;color:var(--text3)">· ${it.store}</span>`:'';
+    return `<div class="util-row"><span>${it.name}${storeLabel}</span>${badge}</div>`;
+  }).join('');
+}
+
+// ===== Consumption trend chart =====
+let dashChartStore=null;
+
+function buildDashChartStoreBar(){
+  const bar=document.getElementById('dash-chart-store-bar');if(!bar)return;
+  if(currentUser.store!=='all'){
+    bar.style.display='none';
+    dashChartStore=currentUser.store;
+    buildDashConsumptionChart();
+    return;
+  }
+  bar.style.display='flex';bar.innerHTML='';
+  if(!dashChartStore)dashChartStore='HO';
+
+  const hoBtn=document.createElement('button');
+  hoBtn.className='store-btn store-btn-ho'+(dashChartStore==='HO'?' active':'');
+  hoBtn.innerHTML='<i class="ti ti-building" style="margin-right:4px"></i>All Stores';
+  hoBtn.onclick=()=>{dashChartStore='HO';buildDashChartStoreBar();};
+  bar.appendChild(hoBtn);
+
+  stores.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='store-btn'+(dashChartStore===s?' active':'');
+    btn.textContent=s;
+    btn.onclick=()=>{dashChartStore=s;buildDashChartStoreBar();};
+    bar.appendChild(btn);
+  });
+
+  buildDashConsumptionChart();
+}
+
+function getStoreDailyConsumption(storeName,dateStr){
+  const sd=storeData[storeName];if(!sd)return 0;
+  if(dateStr===todayStr()){
+    return sd.utilCategories.reduce((sum,cat)=>sum+cat.items.reduce((s,it)=>s+(it.todayQty||0),0),0);
+  }
+  const history=getUtilHistory(storeName);
+  return history.filter(r=>r.date===dateStr).reduce((sum,r)=>sum+r.entries.reduce((s,e)=>s+e.qty,0),0);
+}
+
+function getConsumptionForDate(dateStr,store){
+  const targetStores=store==='HO'?stores:[store];
+  return targetStores.reduce((sum,s)=>sum+getStoreDailyConsumption(s,dateStr),0);
+}
+
+function getConsumptionForMonth(monthKey,store){
+  const targetStores=store==='HO'?stores:[store];
+  let total=0;
+  targetStores.forEach(s=>{
+    const history=getUtilHistory(s);
+    total+=history.filter(r=>r.date.startsWith(monthKey)).reduce((sum,r)=>sum+r.entries.reduce((su,e)=>su+e.qty,0),0);
+    if(todayStr().startsWith(monthKey)){
+      const sd=storeData[s];
+      total+=sd.utilCategories.reduce((sum2,cat)=>sum2+cat.items.reduce((su,it)=>su+(it.todayQty||0),0),0);
+    }
+  });
+  return total;
+}
+
+function buildDashConsumptionChart(){
+  const container=document.getElementById('dash-chart-container');if(!container)return;
+  const view=document.getElementById('dash-chart-view').value;
+  const store=dashChartStore||'HO';
+  let points=[];
+
+  if(view==='weekly'){
+    for(let i=6;i>=0;i--){
+      const d=new Date();d.setDate(d.getDate()-i);
+      const dateStr=fmtDateLocal(d);
+      if(dateStr<APP_START_DATE)continue;
+      points.push({label:d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric'}),value:getConsumptionForDate(dateStr,store)});
+    }
+  } else if(view==='monthly'){
+    for(let i=29;i>=0;i--){
+      const d=new Date();d.setDate(d.getDate()-i);
+      const dateStr=fmtDateLocal(d);
+      if(dateStr<APP_START_DATE)continue;
+      points.push({label:d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}),value:getConsumptionForDate(dateStr,store)});
+    }
+  } else { // yearly
+    const months=getLastNMonths(12);
+    points=months.map(mk=>({label:new Date(mk+'-01T00:00:00').toLocaleDateString('en-IN',{month:'short',year:'2-digit'}),value:getConsumptionForMonth(mk,store)}));
+  }
+
+  const periodLabel=view==='weekly'?'last 7 days':view==='monthly'?'last 30 days':'last 12 months';
+  renderLineChart(container,points,periodLabel);
+}
+
+function renderLineChart(container,points,periodLabel){
+  const W=800,H=240,padL=40,padR=16,padT=16,padB=36;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const maxVal=Math.max(1,...points.map(p=>p.value));
+  const yMax=Math.ceil(maxVal*1.15/5)*5||5;
+  const n=points.length;
+  const stepX=n>1?innerW/(n-1):0;
+  const xPos=i=>padL+i*stepX;
+  const yPos=v=>padT+innerH-(v/yMax)*innerH;
+
+  let gridHtml='';
+  for(let g=0;g<=4;g++){
+    const val=Math.round(yMax*g/4);
+    const yy=yPos(val);
+    gridHtml+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="var(--border)" stroke-width="1"/>`;
+    gridHtml+=`<text x="${padL-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="var(--text3)">${val}</text>`;
+  }
+
+  const pathD=points.map((p,i)=>`${i===0?'M':'L'} ${xPos(i).toFixed(1)} ${yPos(p.value).toFixed(1)}`).join(' ');
+  const areaD=n>1?`${pathD} L ${xPos(n-1).toFixed(1)} ${yPos(0).toFixed(1)} L ${xPos(0).toFixed(1)} ${yPos(0).toFixed(1)} Z`:'';
+
+  let pointsHtml='';
+  points.forEach((p,i)=>{
+    pointsHtml+=`<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(p.value).toFixed(1)}" r="3" fill="var(--teal-dark)"><title>${p.label}: ${p.value}</title></circle>`;
+  });
+
+  let labelStep=1;
+  if(n>14)labelStep=Math.ceil(n/8);
+  let xLabelsHtml='';
+  points.forEach((p,i)=>{
+    if(i%labelStep===0||i===n-1){
+      xLabelsHtml+=`<text x="${xPos(i).toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--text3)">${p.label}</text>`;
+    }
+  });
+
+  const total=points.reduce((s,p)=>s+p.value,0);
+
+  container.innerHTML=`
+    <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Total consumption (${periodLabel}): <strong style="color:var(--text)">${total}</strong> units</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      ${gridHtml}
+      ${areaD?`<path d="${areaD}" fill="var(--teal-light)" opacity="0.5"/>`:''}
+      <path d="${pathD}" fill="none" stroke="var(--teal-dark)" stroke-width="2"/>
+      ${pointsHtml}
+      ${xLabelsHtml}
+    </svg>`;
+}
+
+function showPage(id,navEl){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');
+  if(navEl)navEl.classList.add('active');
+  if(id==='dashboard'){buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();}
+  else if(id==='checklist'){rebuildChecklists();}
+  else if(id==='utilisation'){buildUtil();}
+  else if(id==='staff'){buildStaff();}
+  else if(id==='users'){buildUsersTable();populateStoreSelect();buildStoresList();}
+  else if(id==='roles'){buildRolesGrid();}
+  closeSidebar();
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('show');
+}
+
+function switchClTab(btn,targetId){
+  btn.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+  ['cl-checklist','cl-maint'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==targetId));
+}
+
+function switchTab(btn,targetId){
+  btn.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+  const prefix=targetId.replace(/-[^-]+$/,'-');
+  document.querySelectorAll('[id^="'+prefix+'"]').forEach(d=>d.classList.add('hidden'));
+  document.getElementById(targetId).classList.remove('hidden');
+}
+
+function buildStoreSwitcher(barId, onSwitch, includeHO){
+  const bar=document.getElementById(barId);if(!bar)return;
+  if(currentUser.store!=='all'){bar.style.display='none';return;}
+  bar.style.display='flex';bar.innerHTML='';
+  if(includeHO){
+    const btn=document.createElement('button');
+    btn.className='store-btn store-btn-ho'+(getActiveStore()==='HO'?' active':'');
+    btn.innerHTML='<i class="ti ti-building" style="margin-right:4px"></i>All Stores (HO)';
+    btn.onclick=()=>{activeStore='HO';onSwitch('HO');};
+    bar.appendChild(btn);
+  }
+  stores.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='store-btn'+(getActiveStore()===s?' active':'');
+    btn.textContent=s;
+    btn.onclick=()=>{activeStore=s;onSwitch(s);};
+    bar.appendChild(btn);
+  });
+}
+
+const CL_TASK_KEY={checklist:'checklistTasks'};
+
+function buildChecklist(type){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const tasks=sd[CL_TASK_KEY[type]];
+  const listId=type+'-list';const progId=type+'-prog';const barId=type+'-bar';
+  const isAdmin=hasPerm('checklist_edit');
+  const el=document.getElementById(listId);el.innerHTML='';
+  buildStoreSwitcher('cl-store-bar',()=>{
+    buildChecklist('checklist');
+    const histMode=document.getElementById('maint-mode-history');
+    if(histMode&&!histMode.classList.contains('hidden'))buildMaintHistoryTabs();
+    else buildMaintCategories();
+  });
+  const addCard=document.getElementById('cl-add-'+type);
+  if(addCard)addCard.style.display=isAdmin?'block':'none';
+  tasks.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='checklist-item';
+    const taskText=isAdmin
+      ?`<span class="cl-task-text" contenteditable="true" onblur="renameTask('${type}',${i},this.textContent.trim())" style="outline:none;border-bottom:1px dashed var(--border2);min-width:100px;cursor:text">${t}</span>`
+      :`<span>${t}</span>`;
+    const deleteBtn=isAdmin?`<button class="cl-delete-btn" onclick="deleteChecklistTask('${type}',${i})" title="Delete task"><i class="ti ti-trash" style="font-size:14px"></i></button>`:'';
+    d.innerHTML=`<input type="checkbox" onchange="updateProg('${listId}','${progId}','${barId}',${tasks.length})">${taskText}${deleteBtn}`;
+    el.appendChild(d);
+  });
+  updateProg(listId,progId,barId,tasks.length);
+}
+
+function updateProg(listId, progId, barId, total){
+  const checked = document.querySelectorAll('#' + listId + ' input:checked').length;
+  const pct = total > 0 ? Math.round(checked / total * 100) : 0;
+  const pe = document.getElementById(progId);
+  pe.textContent = checked + ' / ' + total + ' done';
+  pe.className = 'badge ' + (pct === 100 ? 'badge-green' : pct > 50 ? 'badge-amber' : 'badge-red');
+  document.getElementById(barId).style.width = pct + '%';
+  document.querySelectorAll('#' + listId + ' .checklist-item').forEach(row => {
+    const cb=row.querySelector('input[type=checkbox]');
+    row.classList.toggle('done', cb?cb.checked:false);
+  });
+}
+
+function rebuildChecklists(){
+  buildChecklist('checklist');
+  buildMaintCategories();
+}
+
+function addChecklistTask(type){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const inputId='new-'+type+'-task';
+  const val=document.getElementById(inputId).value.trim();if(!val)return;
+  sd[CL_TASK_KEY[type]].push(val);
+  document.getElementById(inputId).value='';rebuildChecklists();
+}
+
+function deleteChecklistTask(type,i){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  if(!confirm('Delete this task?'))return;
+  sd[CL_TASK_KEY[type]].splice(i,1);
+  rebuildChecklists();
+}
+
+function renameTask(type,i,newText){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  if(!newText)return;
+  sd[CL_TASK_KEY[type]][i]=newText;
+}
+
+let activeMaintCat=null;
+
+function buildMaintCategories(){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const isAdmin=hasPerm('checklist_edit');
+  const cats=sd.maintCategories;
+
+  const addCatCard=document.getElementById('maint-add-cat-card');
+  if(addCatCard)addCatCard.style.display=isAdmin?'block':'none';
+
+  // Build tabs
+  const tabBar=document.getElementById('maint-cat-tabs');tabBar.innerHTML='';
+  if(!activeMaintCat||!cats.find(c=>c.id===activeMaintCat))activeMaintCat=cats[0]?cats[0].id:null;
+  cats.forEach(cat=>{
+    const btn=document.createElement('button');
+    btn.className='tab'+(activeMaintCat===cat.id?' active':'');
+    btn.textContent=cat.label;
+    btn.onclick=()=>{activeMaintCat=cat.id;buildMaintCategories();};
+    tabBar.appendChild(btn);
+  });
+  if(isAdmin){
+    const delBtn=document.createElement('button');
+    delBtn.className='tab tab-danger';delBtn.title='Delete current category';
+    delBtn.innerHTML='<i class="ti ti-trash"></i>';
+    delBtn.onclick=()=>deleteMaintCategory();
+    tabBar.appendChild(delBtn);
+  }
+
+  // Build panel
+  const panels=document.getElementById('maint-cat-panels');panels.innerHTML='';
+  const addCard=document.getElementById('cl-add-maint');
+  const cat=cats.find(c=>c.id===activeMaintCat);
+  if(!cat){
+    panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet. Add one below.</p></div>';
+    if(addCard)addCard.style.display='none';
+    return;
+  }
+  if(addCard)addCard.style.display=isAdmin?'block':'none';
+  const newDateInput=document.getElementById('new-maint-date');
+  if(newDateInput)newDateInput.min=todayStr();
+
+  const panel=document.createElement('div');panel.className='card';
+  panel.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <h3 style="margin:0">${cat.label} <span class="badge badge-amber" id="maint-prog">0 / ${cat.tasks.length} done</span></h3>
+  </div>
+  <div id="maint-list"></div>
+  <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" id="maint-bar" style="width:0%"></div></div>`;
+  panels.appendChild(panel);
+
+  const el=document.getElementById('maint-list');
+  const today=todayStr();
+  const dueFlags=cat.tasks.map(t=>!t.date||isMaintDueOccurrence(t,today));
+  const dueCount=dueFlags.filter(Boolean).length;
+  cat.tasks.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='checklist-item';
+    const taskText=isAdmin
+      ?`<span class="cl-task-text" contenteditable="true" onblur="renameMaintTask(${i},this.textContent.trim())" style="outline:none;border-bottom:1px dashed var(--border2);min-width:100px;cursor:text">${t.name}</span>`
+      :`<span>${t.name}</span>`;
+    const freqBadge=`<span class="badge badge-gray maint-freq-badge">${formatMaintFreq(t)}</span>`;
+    const dateBadge=maintDateBadge(t);
+    const editBtn=isAdmin?`<button class="cl-delete-btn" onclick="editMaintTaskMeta(${i})" title="Edit schedule"><i class="ti ti-calendar-time" style="font-size:14px"></i></button>`:'';
+    const deleteBtn=isAdmin?`<button class="cl-delete-btn" onclick="deleteMaintTask(${i})" title="Delete task"><i class="ti ti-trash" style="font-size:14px"></i></button>`:'';
+    const isDueToday=dueFlags[i];
+    const isChecked=!!(t.completions&&t.completions[today]);
+    const checkboxHtml=isDueToday
+      ?`<input type="checkbox" ${isChecked?'checked':''} onchange="toggleMaintCompletion('${cat.id}',${i},this.checked);updateProg('maint-list','maint-prog','maint-bar',${dueCount})">`
+      :`<span class="maint-checkbox-placeholder" title="Not due today"></span>`;
+    d.innerHTML=`${checkboxHtml}${taskText}${freqBadge}${dateBadge}${editBtn}${deleteBtn}`;
+    if(!isDueToday)d.classList.add('maint-not-due');
+    el.appendChild(d);
+  });
+  updateProg('maint-list','maint-prog','maint-bar',dueCount);
+}
+
+const MAINT_WEEK_LABELS=["Every 1st week","Every 2nd week","Every 3rd week","Every 4th week"];
+const MAINT_MONTH_LABELS=["Every month","Every 2nd month","Every 3rd month","Every 4th month","Every 5th month","Every 6th month"];
+
+function formatMaintFreq(t){
+  switch(t.frequency){
+    case 'weekly': return MAINT_WEEK_LABELS[(t.weekOf||1)-1]||MAINT_WEEK_LABELS[0];
+    case 'monthly': return MAINT_MONTH_LABELS[(t.monthInterval||1)-1]||MAINT_MONTH_LABELS[0];
+    case 'yearly': return 'Yearly';
+    default: return 'Daily';
+  }
+}
+
+function maintDateBadge(t){
+  if(!t.date)return '';
+  const today=new Date();today.setHours(0,0,0,0);
+  const due=new Date(t.date+'T00:00:00');
+  const fmt=due.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  let cls='badge-gray',label='Due '+fmt;
+  if(due.getTime()<today.getTime()){cls='badge-red';label='Overdue · '+fmt;}
+  else if(due.getTime()===today.getTime()){cls='badge-amber';label='Due today';}
+  return `<span class="badge ${cls} maint-date-badge"><i class="ti ti-calendar" style="font-size:11px;margin-right:3px"></i>${label}</span>`;
+}
+
+function computeNextMaintDate(dateStr,freq,monthInterval,weekOf){
+  const d=new Date(dateStr+'T00:00:00');
+  switch(freq){
+    case 'daily': d.setDate(d.getDate()+1); break;
+    case 'weekly': d.setDate(d.getDate()+(weekOf||1)*7); break;
+    case 'monthly': d.setMonth(d.getMonth()+(monthInterval||1)); break;
+    case 'yearly': d.setFullYear(d.getFullYear()+1); break;
+  }
+  return fmtDateLocal(d);
+}
+
+function addMaintCategory(){
+  const inp=document.getElementById('maint-new-cat-name');
+  const label=inp.value.trim();if(!label)return;
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const id='maint-'+label.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  if(sd.maintCategories.find(c=>c.id===id)){alert('A category with this name already exists.');return;}
+  sd.maintCategories.push({id,label,tasks:[]});
+  activeMaintCat=id;
+  inp.value='';buildMaintCategories();
+}
+
+function deleteMaintCategory(){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
+  if(!confirm(`Delete category "${cat.label}" and all its reminders?`))return;
+  sd.maintCategories=sd.maintCategories.filter(c=>c.id!==activeMaintCat);
+  activeMaintCat=sd.maintCategories[0]?sd.maintCategories[0].id:null;
+  buildMaintCategories();
+}
+
+function updateMaintFreqOptions(){
+  const freq=document.getElementById('new-maint-freq').value;
+  document.getElementById('new-maint-week').classList.toggle('hidden',freq!=='weekly');
+  document.getElementById('new-maint-month').classList.toggle('hidden',freq!=='monthly');
+}
+
+function addMaintTask(){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
+  const val=document.getElementById('new-maint-task').value.trim();if(!val)return;
+  const freq=document.getElementById('new-maint-freq').value;
+  const weekOf=freq==='weekly'?parseInt(document.getElementById('new-maint-week').value):null;
+  const monthInterval=freq==='monthly'?parseInt(document.getElementById('new-maint-month').value):null;
+  const dateInput=document.getElementById('new-maint-date');
+  let date=dateInput.value||null;
+  const today=todayStr();
+  if(date&&date<today){showMsg('maint-add-msg','Reminder date cannot be in the past.','err');return;}
+
+  let infoMsg=null;
+  if(date===today){
+    date=computeNextMaintDate(date,freq,monthInterval,weekOf);
+    const fmt=new Date(date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    infoMsg=`Today is the start date, so the next reminder (based on ${freq} frequency) is set for ${fmt}.`;
+  }
+
+  cat.tasks.push({name:val,frequency:freq,weekOf,monthInterval,date,completions:{}});
+  document.getElementById('new-maint-task').value='';
+  dateInput.value='';
+  document.getElementById('new-maint-freq').value='daily';
+  updateMaintFreqOptions();
+  buildMaintCategories();
+  if(infoMsg)showMsg('maint-add-msg',infoMsg,'ok');
+}
+
+function deleteMaintTask(i){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
+  if(!confirm('Delete this reminder?'))return;
+  cat.tasks.splice(i,1);
+  buildMaintCategories();
+}
+
+function renameMaintTask(i,newText){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
+  if(!newText)return;
+  cat.tasks[i].name=newText;
+}
+
+function toggleMaintCompletion(catId,i,checked){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===catId);if(!cat)return;
+  const t=cat.tasks[i];if(!t)return;
+  if(!t.completions)t.completions={};
+  const today=todayStr();
+  if(checked)t.completions[today]=true;
+  else delete t.completions[today];
+}
+
+let editingMaintTaskIndex=null;
+
+function editMaintTaskMeta(i){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
+  const t=cat.tasks[i];
+  editingMaintTaskIndex=i;
+
+  document.getElementById('maint-edit-taskname').textContent='Reminder: '+t.name;
+  document.getElementById('edit-maint-freq').value=t.frequency||'daily';
+  document.getElementById('edit-maint-week').value=t.weekOf||1;
+  document.getElementById('edit-maint-month').value=t.monthInterval||1;
+  const dateInput=document.getElementById('edit-maint-date');
+  const today=todayStr();
+  dateInput.min=today;
+  dateInput.value=t.date||'';
+  document.getElementById('maint-edit-msg').style.display='none';
+  updateEditMaintFreqOptions();
+  document.getElementById('maint-edit-modal').classList.remove('hidden');
+}
+
+function updateEditMaintFreqOptions(){
+  const freq=document.getElementById('edit-maint-freq').value;
+  document.getElementById('edit-maint-week-group').classList.toggle('hidden',freq!=='weekly');
+  document.getElementById('edit-maint-month-group').classList.toggle('hidden',freq!=='monthly');
+}
+
+function closeMaintEditModal(){
+  document.getElementById('maint-edit-modal').classList.add('hidden');
+  editingMaintTaskIndex=null;
+}
+
+function saveMaintEdit(){
+  if(editingMaintTaskIndex===null)return;
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
+  const t=cat.tasks[editingMaintTaskIndex];if(!t)return;
+
+  const freq=document.getElementById('edit-maint-freq').value;
+  let dateVal=document.getElementById('edit-maint-date').value;
+  const today=todayStr();
+  if(dateVal&&dateVal<today){showMsg('maint-edit-msg','Reminder date cannot be in the past.','err');return;}
+
+  const monthInterval=freq==='monthly'?parseInt(document.getElementById('edit-maint-month').value):null;
+  const weekOf=freq==='weekly'?parseInt(document.getElementById('edit-maint-week').value):null;
+  let infoMsg=null;
+  if(dateVal===today){
+    dateVal=computeNextMaintDate(dateVal,freq,monthInterval,weekOf);
+    const fmt=new Date(dateVal+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    infoMsg=`Today is the start date, so the next reminder (based on ${freq} frequency) is set for ${fmt}.`;
+  }
+
+  t.frequency=freq;
+  t.weekOf=weekOf;
+  t.monthInterval=monthInterval;
+  t.date=dateVal||null;
+
+  closeMaintEditModal();
+  buildMaintCategories();
+  if(infoMsg)showMsg('maint-add-msg',infoMsg,'ok');
+}
+
+
+
+
+
+
+
+
+let activeUtilCat=null;
+
+function buildUtil(){
+  const s=getActiveStore();
+  buildStoreSwitcher('util-store-bar',()=>buildUtil(),true);
+
+  if(s==='HO'){buildUtilHO();return;}
+
+  rolloverUtilStock(s);
+  const sd=storeData[s];if(!sd)return;
+  const isAdmin=hasPerm('utilisation_edit');
+  const cats=sd.utilCategories;
+
+  // Show/hide add cards
+  const addCatCard=document.getElementById('util-add-cat-card');
+  if(addCatCard)addCatCard.style.display=isAdmin?'block':'none';
+  const addItemCard=document.getElementById('util-add-item-card');
+  if(addItemCard)addItemCard.style.display=isAdmin?'block':'none';
+
+  // Build tabs
+  const tabBar=document.getElementById('util-cat-tabs');tabBar.innerHTML='';
+  if(!activeUtilCat||!cats.find(c=>c.id===activeUtilCat))activeUtilCat=cats[0]?cats[0].id:null;
+  cats.forEach(cat=>{
+    const btn=document.createElement('button');
+    btn.className='tab'+(activeUtilCat===cat.id?' active':'');
+    btn.textContent=cat.label;
+    btn.onclick=()=>{activeUtilCat=cat.id;buildUtil();};
+    tabBar.appendChild(btn);
+  });
+  if(isAdmin){
+    // Delete category button at end of tabs
+    const delBtn=document.createElement('button');
+    delBtn.className='tab tab-danger';delBtn.title='Delete current category';
+    delBtn.innerHTML='<i class="ti ti-trash"></i>';
+    delBtn.onclick=()=>deleteUtilCategory();
+    tabBar.appendChild(delBtn);
+  }
+
+  // Build panels
+  const panels=document.getElementById('util-cat-panels');panels.innerHTML='';
+  const cat=cats.find(c=>c.id===activeUtilCat);
+  if(!cat){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet. Add one below.</p></div>';buildUtilCatSelect(cats);return;}
+
+  const panel=document.createElement('div');panel.className='card';
+  let html=`<h3>${cat.label}</h3>`;
+  html+=`<div class="util-header-row"><div class="util-col-name"></div><div class="util-col-label">Opening stock</div><div class="util-col-label">Today's use</div><div class="util-col-label">Total consumed</div><div class="util-col-label">Remaining</div></div>`;
+  cat.items.forEach((item,i)=>{
+    const remaining=Math.max(0,item.opening-item.consumed-item.todayQty);
+    const totalConsumed=item.consumed+item.todayQty;
+    const reorderLevel=item.reorderLevel||0;
+    const isEmpty=item.opening>0&&remaining===0;
+    const isLow=!isEmpty&&item.opening>0&&reorderLevel>0&&remaining<=reorderLevel;
+    const stockBadge=isEmpty?`<span class="badge badge-red">Out of stock</span>`:isLow?`<span class="badge badge-amber">Low stock</span>`:``;
+    const openingCell=isAdmin
+      ?`<div class="util-col-stock"><input class="util-stock-input" type="number" min="0" value="${item.opening}" onchange="setOpening('${cat.id}',${i},this.value)"/></div>`
+      :`<div class="util-col-stock"><span class="util-stock-val">${item.opening}</span></div>`;
+    const delBtn=isAdmin?`<button class="cl-delete-btn" onclick="deleteUtilItem('${cat.id}',${i})" title="Delete item"><i class="ti ti-trash" style="font-size:13px"></i></button>`:'';
+    const reorderEditor=isAdmin
+      ?`<span class="util-reorder-edit" title="Edit low stock alert level">Alert ≤<input type="number" min="0" value="${reorderLevel}" onchange="setReorderLevel('${cat.id}',${i},this.value)"></span>`
+      :(reorderLevel>0?`<span class="util-reorder-display">Alert ≤ ${reorderLevel}</span>`:'');
+    html+=`<div class="util-item-row ${isLow&&!isEmpty?'util-row-warn':''} ${isEmpty?'util-row-empty':''}">
+      <div class="util-col-name"><span class="util-item-name">${item.name}</span>${stockBadge}${reorderEditor}${delBtn}</div>
+      ${openingCell}
+      <div class="util-col-stock"><div class="util-qty"><button onclick="changeUtil('${cat.id}',${i},-1)">−</button><span id="uq-${cat.id}-${i}">${item.todayQty}</span><button onclick="changeUtil('${cat.id}',${i},1)">+</button></div></div>
+      <div class="util-col-stock"><span class="util-stock-val">${totalConsumed}</span></div>
+      <div class="util-col-stock"><span class="util-stock-val" style="font-weight:600;color:${isEmpty?'#A32D2D':isLow?'#854F0B':'var(--text)'}">${remaining}</span></div>
+    </div>`;
+  });
+  if(!cat.items.length)html+=`<p style="color:var(--text3);font-size:13px;padding:8px 0">No items yet. Add one below.</p>`;
+  panel.innerHTML=html;panels.appendChild(panel);
+  buildUtilCatSelect(cats);
+}
+
+function buildUtilHO(){
+  // Hide add cards — read-only aggregate view
+  const addCatCard=document.getElementById('util-add-cat-card');if(addCatCard)addCatCard.style.display='none';
+  const addItemCard=document.getElementById('util-add-item-card');if(addItemCard)addItemCard.style.display='none';
+
+  // Collect union of categories across all stores (by label)
+  const catMap={}; // label -> {items: {name: {opening,consumed,todayQty}}}
+  stores.forEach(storeName=>{
+    rolloverUtilStock(storeName);
+    const sd=storeData[storeName];if(!sd)return;
+    sd.utilCategories.forEach(cat=>{
+      if(!catMap[cat.label])catMap[cat.label]={items:{}};
+      cat.items.forEach(item=>{
+        if(!catMap[cat.label].items[item.name])catMap[cat.label].items[item.name]={opening:0,consumed:0,todayQty:0,reorderLevel:0};
+        catMap[cat.label].items[item.name].opening+=item.opening;
+        catMap[cat.label].items[item.name].consumed+=item.consumed;
+        catMap[cat.label].items[item.name].todayQty+=item.todayQty;
+        catMap[cat.label].items[item.name].reorderLevel+=(item.reorderLevel||0);
+      });
+    });
+  });
+  const labels=Object.keys(catMap);
+
+  // Build tabs
+  const tabBar=document.getElementById('util-cat-tabs');tabBar.innerHTML='';
+  if(!activeUtilCat||!labels.includes(activeUtilCat))activeUtilCat=labels[0]||null;
+  labels.forEach(label=>{
+    const btn=document.createElement('button');
+    btn.className='tab'+(activeUtilCat===label?' active':'');
+    btn.textContent=label;
+    btn.onclick=()=>{activeUtilCat=label;buildUtilHO();};
+    tabBar.appendChild(btn);
+  });
+
+  // Build panel
+  const panels=document.getElementById('util-cat-panels');panels.innerHTML='';
+  if(!activeUtilCat){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories found across any store yet.</p></div>';return;}
+
+  const items=catMap[activeUtilCat].items;
+  const panel=document.createElement('div');panel.className='card';
+  let html=`<h3>${activeUtilCat} <span style="font-size:11px;color:var(--text3);font-weight:400">— combined across all stores</span></h3>`;
+  html+=`<div class="util-header-row"><div class="util-col-name"></div><div class="util-col-label">Total opening stock</div><div class="util-col-label">Today's use</div><div class="util-col-label">Total consumed</div><div class="util-col-label">Remaining</div></div>`;
+  Object.entries(items).forEach(([name,item])=>{
+    const remaining=Math.max(0,item.opening-item.consumed-item.todayQty);
+    const totalConsumed=item.consumed+item.todayQty;
+    const isEmpty=item.opening>0&&remaining===0;
+    const isLow=item.opening>0&&!isEmpty&&item.reorderLevel>0&&remaining<=item.reorderLevel;
+    const stockBadge=isEmpty?`<span class="badge badge-red">Out of stock</span>`:isLow?`<span class="badge badge-amber">Low stock</span>`:``;
+    html+=`<div class="util-item-row ${isLow&&!isEmpty?'util-row-warn':''} ${isEmpty?'util-row-empty':''}">
+      <div class="util-col-name"><span class="util-item-name">${name}</span>${stockBadge}</div>
+      <div class="util-col-stock"><span class="util-stock-val">${item.opening}</span></div>
+      <div class="util-col-stock"><span class="util-stock-val">${item.todayQty}</span></div>
+      <div class="util-col-stock"><span class="util-stock-val">${totalConsumed}</span></div>
+      <div class="util-col-stock"><span class="util-stock-val" style="font-weight:600;color:${isEmpty?'#A32D2D':isLow?'#854F0B':'var(--text)'}">${remaining}</span></div>
+    </div>`;
+  });
+  if(!Object.keys(items).length)html+=`<p style="color:var(--text3);font-size:13px;padding:8px 0">No items in this category.</p>`;
+  panel.innerHTML=html;panels.appendChild(panel);
+}
+
+function buildUtilCatSelect(cats){
+  const sel=document.getElementById('util-new-cat');if(!sel)return;
+  sel.innerHTML='';
+  cats.forEach(cat=>{const o=document.createElement('option');o.value=cat.id;o.textContent=cat.label;sel.appendChild(o);});
+  if(activeUtilCat)sel.value=activeUtilCat;
+}
+
+function addUtilCategory(){
+  const inp=document.getElementById('util-new-cat-name');
+  const label=inp.value.trim();if(!label)return;
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const id='util-'+label.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  if(sd.utilCategories.find(c=>c.id===id)){alert('A category with this name already exists.');return;}
+  sd.utilCategories.push({id,label,items:[]});
+  activeUtilCat=id;
+  inp.value='';buildUtil();
+}
+
+function deleteUtilCategory(){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.utilCategories.find(c=>c.id===activeUtilCat);if(!cat)return;
+  if(!confirm(`Delete category "${cat.label}" and all its items?`))return;
+  sd.utilCategories=sd.utilCategories.filter(c=>c.id!==activeUtilCat);
+  activeUtilCat=sd.utilCategories[0]?sd.utilCategories[0].id:null;
+  buildUtil();
+}
+
+function setReorderLevel(catId,i,val){
+  const sd=storeData[getActiveStore()];if(!sd)return;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  cat.items[i].reorderLevel=Math.max(0,parseInt(val)||0);
+  buildUtil();
+}
+
+function setOpening(catId,i,val){
+  const sd=storeData[getActiveStore()];if(!sd)return;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  const item=cat.items[i];
+  const totalConsumed=item.consumed+item.todayQty;
+  let newOpening=Math.max(0,parseInt(val)||0);
+  if(newOpening<totalConsumed){
+    newOpening=totalConsumed;
+    showMsg('util-msg',`Opening stock can't be less than what's already been consumed (${totalConsumed}). Set to ${totalConsumed}.`,'err');
+  }
+  item.opening=newOpening;buildUtil();
+}
+
+function changeUtil(catId,i,delta){
+  const sd=storeData[getActiveStore()];if(!sd)return;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  const item=cat.items[i];
+  const maxTodayQty=item.opening>0?Math.max(0,item.opening-item.consumed):Infinity;
+  item.todayQty=Math.min(maxTodayQty,Math.max(0,item.todayQty+delta));buildUtil();
+}
+
+function addUtilItem(){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const name=document.getElementById('util-new-name').value.trim();
+  const catId=document.getElementById('util-new-cat').value;
+  const reorderLevel=Math.max(0,parseInt(document.getElementById('util-new-reorder').value)||0);
+  if(!name)return;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  cat.items.push({name,opening:0,consumed:0,todayQty:0,reorderLevel});
+  activeUtilCat=catId;buildUtil();
+  document.getElementById('util-new-name').value='';
+  document.getElementById('util-new-reorder').value='5';
+}
+
+function deleteUtilItem(catId,i){
+  if(!confirm('Delete this item?'))return;
+  const sd=storeData[getActiveStore()];if(!sd)return;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  cat.items.splice(i,1);buildUtil();
+}
+
+function switchUtilMode(mode){
+  document.getElementById('util-mode-current').classList.toggle('hidden',mode!=='current');
+  document.getElementById('util-mode-history').classList.toggle('hidden',mode!=='history');
+  document.getElementById('utilmode-current').classList.toggle('active',mode==='current');
+  document.getElementById('utilmode-history').classList.toggle('active',mode==='history');
+  if(mode==='history'){buildStoreSwitcher('util-store-bar',()=>switchUtilMode('history'),true);buildUtilHistoryTabs();}
+  else buildUtil();
+}
+
+function buildUtilHistoryTabs(){
+  const s=getActiveStore();
+  const tabBar=document.getElementById('util-hist-tabs');tabBar.innerHTML='';
+  const panels=document.getElementById('util-hist-panels');panels.innerHTML='';
+  if(s==='HO'){
+    panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">History view is per-store. Select a store above to see its history.</p></div>';
+    return;
+  }
+  const sd=storeData[s];if(!sd)return;
+  const cats=sd.utilCategories;
+  if(!cats.length){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet.</p></div>';return;}
+  cats.forEach((cat,idx)=>{
+    const btn=document.createElement('button');btn.className='tab'+(idx===0?' active':'');
+    btn.textContent=cat.label;
+    const panelId='util-hist-'+cat.id;
+    const panel=document.createElement('div');panel.id=panelId;panel.className=idx===0?'':'hidden';
+    panels.appendChild(panel);
+    btn.onclick=()=>{
+      tabBar.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+      panels.querySelectorAll('div').forEach(p=>p.classList.add('hidden'));panel.classList.remove('hidden');
+      buildUtilHistory(cat.id,panelId);
+    };
+    tabBar.appendChild(btn);
+    if(idx===0)buildUtilHistory(cat.id,panelId);
+  });
+}
+
+function sumUtilQty(catRecords,name,periodKey){
+  return catRecords.filter(r=>r.date.startsWith(periodKey)).reduce((sum,r)=>{
+    const e=r.entries.find(x=>x.name===name);
+    return sum+(e?e.qty:0);
+  },0);
+}
+
+function buildUtilHistory(catId,containerId){
+  const el=document.getElementById(containerId);if(!el)return;
+  const viewType=document.getElementById('util-hist-view').value;
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  const itemNames=cat.items.map(i=>i.name);
+  if(!itemNames.length){el.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No items in this category yet.</p></div>';return;}
+  const catRecords=getUtilHistory(s).filter(r=>r.cat===catId);
+
+  if(viewType==='weekly'){
+    renderUtilWeeklyHistory(catId,catRecords,itemNames,el);
+  } else if(viewType==='monthly'){
+    const months=getLastNMonths(12).reverse();
+    const columns=months.map(mk=>({key:mk,label:new Date(mk+'-01T00:00:00').toLocaleDateString('en-IN',{month:'short',year:'numeric'})}));
+    const getValue=(name,mk)=>sumUtilQty(catRecords,name,mk);
+    renderMaintMatrix(el,itemNames,columns,getValue,{checkmark:false,rowLabel:'Item'});
+  } else { // yearly
+    const years=getLastNYears(3).reverse();
+    const columns=years.map(yk=>({key:yk,label:yk}));
+    const getValue=(name,yk)=>sumUtilQty(catRecords,name,yk);
+    renderMaintMatrix(el,itemNames,columns,getValue,{checkmark:false,rowLabel:'Item'});
+  }
+}
+
+let utilWeekMonth={};
+
+function onUtilWeekMonthChange(catId,value){
+  utilWeekMonth[catId]=value;
+  buildUtilHistory(catId,'util-hist-'+catId);
+}
+
+function renderUtilWeeklyHistory(catId,catRecords,itemNames,el){
+  const months=getLastNMonths(12).reverse();
+  let selectedMonth=utilWeekMonth[catId];
+  if(!selectedMonth||!months.includes(selectedMonth))selectedMonth=months[0];
+  utilWeekMonth[catId]=selectedMonth;
+
+  let html=`<div style="margin-bottom:14px">
+    <select onchange="onUtilWeekMonthChange('${catId}',this.value)" style="padding:8px 14px;font-size:13px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+      ${months.map(mk=>`<option value="${mk}" ${mk===selectedMonth?'selected':''}>${monthLabelFromKey(mk)}</option>`).join('')}
+    </select>
+  </div>`;
+
+  const recordByDate={};
+  catRecords.filter(r=>r.date.startsWith(selectedMonth)).forEach(r=>recordByDate[r.date]=r);
+
+  const [year,monthNum]=selectedMonth.split('-').map(Number);
+  const daysInMonth=new Date(year,monthNum,0).getDate();
+  const weekRanges=[[1,7],[8,14],[15,21],[22,daysInMonth]];
+
+  weekRanges.forEach(([start,end],idx)=>{
+    const days=[];
+    for(let d=start;d<=end;d++)days.push(`${selectedMonth}-${String(d).padStart(2,'0')}`);
+    const fmt=dt=>new Date(dt+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const label=`Week ${idx+1} &nbsp;<span style="font-size:11px;color:var(--text3);font-weight:400">${fmt(days[0])} – ${fmt(days[days.length-1])}</span>`;
+
+    const gridCols=`180px repeat(${days.length},1fr) 70px`;
+    let tableHtml=`<div class="hist-daily-table"><div class="hist-daily-header" style="grid-template-columns:${gridCols}"><div>Item</div>`+days.map(dt=>`<div>${fmt(dt)}</div>`).join('')+'<div>Total</div></div>';
+
+    const dayTotals=new Array(days.length).fill(0);
+    let grandTotal=0;
+    itemNames.forEach(name=>{
+      let rowTotal=0;
+      const cells=days.map((dt,di)=>{
+        const rec=recordByDate[dt];
+        const e=rec?rec.entries.find(x=>x.name===name):null;
+        const q=e?e.qty:0;
+        rowTotal+=q;dayTotals[di]+=q;
+        return `<div style="color:${q>0?'var(--text)':'var(--text3)'}">${q>0?q:'–'}</div>`;
+      }).join('');
+      grandTotal+=rowTotal;
+      tableHtml+=`<div class="hist-daily-row" style="grid-template-columns:${gridCols}"><div style="font-size:12px;color:var(--text)">${name}</div>${cells}<div style="font-weight:600">${rowTotal}</div></div>`;
+    });
+    const totalCells=dayTotals.map(t=>`<div style="font-weight:600">${t}</div>`).join('');
+    tableHtml+=`<div class="hist-daily-row" style="grid-template-columns:${gridCols};font-weight:600;border-top:1px solid var(--border2)"><div>Total</div>${totalCells}<div>${grandTotal}</div></div>`;
+    tableHtml+='</div>';
+
+    html+=`<div class="hist-week-card"><div class="hist-week-header" onclick="toggleWeek(this)">${label}<span class="hist-chevron">▾</span></div><div class="hist-week-body">${tableHtml}</div></div>`;
+  });
+  el.innerHTML=html;
+}
+
+function toggleWeek(header){const body=header.nextElementSibling;const chevron=header.querySelector('.hist-chevron');const isHidden=body.style.display==='none';body.style.display=isHidden?'block':'none';chevron.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';}
+
+// ─── Maintenance history (based on real completion records) ──────
+function isMaintDueOccurrence(task,dateStr){
+  if(!task.date)return false;
+  const anchor=new Date(task.date+'T00:00:00');
+  const target=new Date(dateStr+'T00:00:00');
+  if(target<anchor)return false;
+  const diffDays=Math.round((target-anchor)/(1000*60*60*24));
+  switch(task.frequency){
+    case 'daily':
+      return true;
+    case 'weekly':{
+      const interval=(task.weekOf||1)*7;
+      return diffDays%interval===0;
+    }
+    case 'monthly':{
+      const interval=task.monthInterval||1;
+      if(target.getDate()!==anchor.getDate())return false;
+      const monthsDiff=(target.getFullYear()-anchor.getFullYear())*12+(target.getMonth()-anchor.getMonth());
+      return monthsDiff>=0&&monthsDiff%interval===0;
+    }
+    case 'yearly':
+      return target.getDate()===anchor.getDate()&&target.getMonth()===anchor.getMonth()&&target.getFullYear()>=anchor.getFullYear();
+    default:
+      return false;
+  }
+}
+
+function countMaintCompletions(task,key){
+  if(!task.completions)return 0;
+  return Object.keys(task.completions).filter(d=>task.completions[d]&&d.startsWith(key)).length;
+}
+
+function getLastNMonths(n){
+  const months=[];const today=new Date();
+  const start=new Date(APP_START_DATE+'T00:00:00');
+  const startKey=fmtDateLocal(start).slice(0,7);
+  for(let i=n-1;i>=0;i--){
+    const d=new Date(today.getFullYear(),today.getMonth()-i,1);
+    const key=fmtDateLocal(d).slice(0,7);
+    if(key<startKey)continue;
+    months.push(key);
+  }
+  return months;
+}
+
+function getLastNYears(n){
+  const years=[];const currentYear=new Date().getFullYear();
+  const startYear=new Date(APP_START_DATE+'T00:00:00').getFullYear();
+  for(let i=n-1;i>=0;i--){
+    const y=currentYear-i;
+    if(y<startYear)continue;
+    years.push(String(y));
+  }
+  return years;
+}
+
+function switchMaintMode(mode){
+  document.getElementById('maint-mode-current').classList.toggle('hidden',mode!=='current');
+  document.getElementById('maint-mode-history').classList.toggle('hidden',mode!=='history');
+  document.getElementById('maintmode-current').classList.toggle('active',mode==='current');
+  document.getElementById('maintmode-history').classList.toggle('active',mode==='history');
+  if(mode==='history')buildMaintHistoryTabs();
+  else buildMaintCategories();
+}
+
+function buildMaintHistoryTabs(){
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cats=sd.maintCategories;
+  const tabBar=document.getElementById('maint-hist-tabs');tabBar.innerHTML='';
+  const panels=document.getElementById('maint-hist-panels');panels.innerHTML='';
+  if(!cats.length){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet.</p></div>';return;}
+  cats.forEach((cat,idx)=>{
+    const btn=document.createElement('button');btn.className='tab'+(idx===0?' active':'');
+    btn.textContent=cat.label;
+    const panelId='maint-hist-'+cat.id;
+    const panel=document.createElement('div');panel.id=panelId;panel.className=idx===0?'':'hidden';
+    panels.appendChild(panel);
+    btn.onclick=()=>{
+      tabBar.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+      panels.querySelectorAll('div').forEach(p=>p.classList.add('hidden'));panel.classList.remove('hidden');
+      buildMaintHistory(cat.id,panelId);
+    };
+    tabBar.appendChild(btn);
+    if(idx===0)buildMaintHistory(cat.id,panelId);
+  });
+}
+
+function buildMaintHistory(catId,containerId){
+  const el=document.getElementById(containerId);if(!el)return;
+  const viewType=document.getElementById('maint-hist-view').value;
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===catId);if(!cat)return;
+  const tasks=cat.tasks;
+
+  if(!tasks.length){el.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No reminders in this category yet.</p></div>';return;}
+
+  if(viewType==='weekly'){
+    renderMaintWeeklyHistory(catId,tasks,el);
+  } else if(viewType==='monthly'){
+    const months=getLastNMonths(12).reverse();
+    const columns=months.map(mk=>({key:mk,label:new Date(mk+'-01T00:00:00').toLocaleDateString('en-IN',{month:'short',year:'numeric'})}));
+    const getValue=(name,mk)=>{const t=tasks.find(x=>x.name===name);return countMaintCompletions(t,mk);};
+    renderMaintMatrix(el,tasks.map(t=>t.name),columns,getValue,{checkmark:false});
+  } else { // yearly
+    const years=getLastNYears(3).reverse();
+    const columns=years.map(yk=>({key:yk,label:yk}));
+    const getValue=(name,yk)=>{const t=tasks.find(x=>x.name===name);return countMaintCompletions(t,yk);};
+    renderMaintMatrix(el,tasks.map(t=>t.name),columns,getValue,{checkmark:false});
+  }
+}
+
+let maintWeekMonth={};
+
+function monthLabelFromKey(mk){
+  return new Date(mk+'-01T00:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+}
+
+function onMaintWeekMonthChange(catId,value){
+  maintWeekMonth[catId]=value;
+  buildMaintHistory(catId,'maint-hist-'+catId);
+}
+
+function renderMaintWeeklyHistory(catId,tasks,el){
+  const months=getLastNMonths(12).reverse();
+  let selectedMonth=maintWeekMonth[catId];
+  if(!selectedMonth||!months.includes(selectedMonth))selectedMonth=months[0];
+  maintWeekMonth[catId]=selectedMonth;
+
+  let html=`<div style="margin-bottom:14px">
+    <select onchange="onMaintWeekMonthChange('${catId}',this.value)" style="padding:8px 14px;font-size:13px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+      ${months.map(mk=>`<option value="${mk}" ${mk===selectedMonth?'selected':''}>${monthLabelFromKey(mk)}</option>`).join('')}
+    </select>
+  </div>`;
+
+  const [year,monthNum]=selectedMonth.split('-').map(Number);
+  const daysInMonth=new Date(year,monthNum,0).getDate();
+  const weekRanges=[[1,7],[8,14],[15,21],[22,daysInMonth]];
+  const todayDateStr=todayStr();
+
+  weekRanges.forEach(([start,end],idx)=>{
+    const days=[];
+    for(let d=start;d<=end;d++)days.push(`${selectedMonth}-${String(d).padStart(2,'0')}`);
+    const fmt=dt=>new Date(dt+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const label=`Week ${idx+1} &nbsp;<span style="font-size:11px;color:var(--text3);font-weight:400">${fmt(days[0])} – ${fmt(days[days.length-1])}</span>`;
+
+    const gridCols=`180px repeat(${days.length},1fr)`;
+    let tableHtml=`<div class="hist-daily-table"><div class="hist-daily-header" style="grid-template-columns:${gridCols}"><div>Task</div>`+days.map(dt=>`<div>${fmt(dt)}</div>`).join('')+'</div>';
+    tasks.forEach(t=>{
+      tableHtml+=`<div class="hist-daily-row" style="grid-template-columns:${gridCols}"><div style="font-size:12px;color:var(--text)">${t.name}</div>`+days.map(dt=>{
+        const isDue=isMaintDueOccurrence(t,dt);
+        if(!isDue)return `<div style="color:var(--text3)">–</div>`;
+        const done=t.completions&&t.completions[dt];
+        if(done)return `<div style="color:var(--teal-dark);font-weight:600">✓</div>`;
+        if(dt<todayDateStr)return `<div style="color:#A32D2D;font-weight:600">✗</div>`;
+        return `<div style="color:var(--text3)">–</div>`;
+      }).join('')+'</div>';
+    });
+    tableHtml+='</div>';
+    html+=`<div class="hist-week-card"><div class="hist-week-header" onclick="toggleWeek(this)">${label}<span class="hist-chevron">▾</span></div><div class="hist-week-body">${tableHtml}</div></div>`;
+  });
+  el.innerHTML=html;
+}
+
+function renderMaintMatrix(el,taskNames,columns,getValue,opts){
+  const gridCols=`180px repeat(${columns.length},1fr)`;
+  const rowLabel=opts.rowLabel||'Task';
+  let html=`<div class="card"><div class="hist-daily-table"><div class="hist-daily-header" style="grid-template-columns:${gridCols}"><div>${rowLabel}</div>`+columns.map(c=>`<div>${c.label}</div>`).join('')+'</div>';
+  taskNames.forEach(name=>{
+    html+=`<div class="hist-daily-row" style="grid-template-columns:${gridCols}"><div style="font-size:12px;color:var(--text)">${name}</div>`+columns.map(c=>{
+      const v=getValue(name,c.key);
+      if(opts.checkmark){
+        return `<div style="color:${v?'var(--teal-dark)':'var(--text3)'};font-weight:${v?'600':'400'}">${v?'✓':'–'}</div>`;
+      }
+      return `<div style="color:${v>0?'var(--text)':'var(--text3)'};font-weight:${v>0?'600':'400'}">${v}</div>`;
+    }).join('')+'</div>';
+  });
+  html+='</div></div>';
+  el.innerHTML=html;
+}
+
+
+function buildStaff(){
+  const el=document.getElementById('staff-list');el.innerHTML='';
+  buildStoreSwitcher('staff-store-bar',()=>buildStaff(),true);
+  const s=getActiveStore();
+
+  if(s==='HO'){buildStaffHO();return;}
+
+  const sd=storeData[s];if(!sd)return;
+  const isAdmin=hasPerm('staff_edit');
+  const staffList=sd.staff;
+
+  // Show/hide add card
+  const addCard=document.getElementById('staff-add-card');
+  if(addCard)addCard.style.display=isAdmin?'block':'none';
+
+  if(!staffList.length){
+    el.innerHTML='<p style="font-size:13px;color:var(--text3);padding:8px 0">No staff added yet. Use the form below to add members.</p>';
+    document.getElementById('staff-summary').textContent='';return;
+  }
+
+  const present=staffList.filter(st=>st.attendance==='present').length;
+  const absent=staffList.filter(st=>st.attendance==='absent').length;
+  const unmarked=staffList.length-present-absent;
+  document.getElementById('staff-summary').textContent=
+    `${present} present · ${absent} absent${unmarked?` · ${unmarked} unmarked`:''}`;
+
+  staffList.forEach((st,i)=>{
+    const isPresent=st.attendance==='present';
+    const isAbsent=st.attendance==='absent';
+    const rowBg=isPresent?'background:linear-gradient(90deg,#E1F5EE44,transparent)':isAbsent?'background:linear-gradient(90deg,#FCEBEB44,transparent)':'';
+    const presentStyle=isPresent?'background:#0F6E56;color:#fff;border-color:#0F6E56':'background:#E1F5EE;color:#0F6E56;border-color:#9FE1CB';
+    const absentStyle=isAbsent?'background:#A32D2D;color:#fff;border-color:#A32D2D':'';
+    const delBtn=isAdmin?`<button class="cl-delete-btn" onclick="deleteStaffMember('${s}',${i})" title="Remove staff member" style="opacity:0.5;margin-left:4px"><i class="ti ti-trash" style="font-size:13px"></i></button>`:'';
+
+    el.innerHTML+=`<div class="util-row" style="${rowBg};padding:10px 0;transition:background 0.2s">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--teal-light);color:var(--teal-dark);font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${st.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-weight:500;font-size:14px">${st.name}</div>
+          <div style="font-size:11px;color:var(--text2)">${st.role}</div>
+        </div>
+        ${delBtn}
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" style="${presentStyle}" onclick="setAttendance('${s}',${i},'present',this)">✓ Present</button>
+        <button class="btn btn-sm" style="${absentStyle}" onclick="setAttendance('${s}',${i},'absent',this)">✗ Absent</button>
+      </div>
+    </div>`;
+  });
+}
+
+function buildStaffHO(){
+  const el=document.getElementById('staff-list');el.innerHTML='';
+  const addCard=document.getElementById('staff-add-card');if(addCard)addCard.style.display='none';
+
+  let allStaff=[];
+  stores.forEach(storeName=>{
+    const sd=storeData[storeName];if(!sd)return;
+    sd.staff.forEach(st=>allStaff.push({...st,store:storeName}));
+  });
+
+  if(!allStaff.length){
+    el.innerHTML='<p style="font-size:13px;color:var(--text3);padding:8px 0">No staff added in any store yet.</p>';
+    document.getElementById('staff-summary').textContent='';return;
+  }
+
+  const present=allStaff.filter(st=>st.attendance==='present').length;
+  const absent=allStaff.filter(st=>st.attendance==='absent').length;
+  const unmarked=allStaff.length-present-absent;
+  document.getElementById('staff-summary').textContent=
+    `${allStaff.length} staff across ${stores.length} stores · ${present} present · ${absent} absent${unmarked?` · ${unmarked} unmarked`:''}`;
+
+  allStaff.forEach(st=>{
+    const isPresent=st.attendance==='present';
+    const isAbsent=st.attendance==='absent';
+    const rowBg=isPresent?'background:linear-gradient(90deg,#E1F5EE44,transparent)':isAbsent?'background:linear-gradient(90deg,#FCEBEB44,transparent)':'';
+    const statusBadge=isPresent?'<span class="badge badge-green">Present</span>':isAbsent?'<span class="badge badge-red">Absent</span>':'<span class="badge badge-gray">Unmarked</span>';
+
+    el.innerHTML+=`<div class="util-row" style="${rowBg};padding:10px 0;transition:background 0.2s">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--teal-light);color:var(--teal-dark);font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${st.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-weight:500;font-size:14px">${st.name}</div>
+          <div style="font-size:11px;color:var(--text2)">${st.role} · ${st.store}</div>
+        </div>
+      </div>
+      <div>${statusBadge}</div>
+    </div>`;
+  });
+}
+
+function addStaffMember(){
+  const name=document.getElementById('staff-new-name').value.trim();
+  const role=document.getElementById('staff-new-role').value.trim();
+  if(!name)return;
+  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  sd.staff.push({name,role:role||'Staff',attendance:null});
+  document.getElementById('staff-new-name').value='';
+  document.getElementById('staff-new-role').value='';
+  buildStaff();
+}
+
+function deleteStaffMember(store,i){
+  if(!confirm('Remove this staff member?'))return;
+  const sd=storeData[store];if(!sd)return;
+  sd.staff.splice(i,1);buildStaff();
+}
+
+function setAttendance(store,i,status,btn){
+  const sd=storeData[store];if(!sd)return;
+  // Toggle off if already selected
+  if(sd.staff[i].attendance===status){sd.staff[i].attendance=null;}
+  else{sd.staff[i].attendance=status;}
+  buildStaff();
+}
+
+function populateStoreSelect(){
+  const sel=document.getElementById('nu-store');if(!sel)return;
+  sel.innerHTML='<option value="all">All Stores</option>';
+  stores.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+}
+
+function buildStoresList(){
+  const el=document.getElementById('stores-list');if(!el)return;el.innerHTML='';
+  if(!stores.length){el.innerHTML='<p style="font-size:13px;color:var(--text3)">No stores added yet.</p>';return;}
+  stores.forEach((s,i)=>{
+    el.innerHTML+=`<div class="util-row">
+      <span style="font-weight:500">${s}</span>
+      <button class="btn btn-sm btn-danger" onclick="deleteStore(${i})"><i class="ti ti-trash"></i> Remove</button>
+    </div>`;
+  });
+}
+
+function addStore(){
+  const val=document.getElementById('new-store-name').value.trim();
+  if(!val)return;
+  if(stores.includes(val)){alert('Store "'+val+'" already exists.');return;}
+  stores.push(val);
+  initStoreData(val);
+  document.getElementById('new-store-name').value='';
+  buildStoresList();populateStoreSelect();buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();
+}
+
+function deleteStore(i){
+  const name=stores[i];
+  const hasUsers=users.some(u=>u.store===name);
+  if(hasUsers){alert('Cannot remove "'+name+'" — '+users.filter(u=>u.store===name).length+' user(s) are assigned to it. Reassign them first.');return;}
+  if(!confirm('Remove store "'+name+'"? This cannot be undone.'))return;
+  stores.splice(i,1);
+  delete storeData[name];
+  buildStoresList();populateStoreSelect();buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();
+}
+
+function populateRoleSelect(){
+  const sel=document.getElementById('nu-role');sel.innerHTML='';
+  roles.forEach(r=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=r.name;sel.appendChild(opt);});
+}
+
+function buildUsersTable(){
+  const tbody=document.getElementById('users-body');if(!tbody)return;tbody.innerHTML='';
+  users.forEach((u,i)=>{
+    const r=getRoleById(u.roleId);
+    const isProtected=u.username==='management';
+    const actions=isProtected?'<span style="font-size:11px;color:var(--text3)">protected</span>':`<div style="display:flex;gap:6px"><button class="btn btn-sm btn-warn" onclick="openResetModal('${u.username}')"><i class="ti ti-key"></i> Reset pw</button><button class="btn btn-sm btn-danger" onclick="removeUser(${i})">Remove</button></div>`;
+    tbody.innerHTML+=`<tr><td><code>${u.username}</code></td><td>${u.fullname}</td><td><span class="badge ${r.color}">${r.name}</span></td><td>${u.store==='all'?'All Stores':u.store}</td><td>${actions}</td></tr>`;
+  });
+}
+
+function addUser(){
+  const username=document.getElementById('nu-user').value.trim();const fullname=document.getElementById('nu-full').value.trim();const password=document.getElementById('nu-pass').value;const roleId=document.getElementById('nu-role').value;const store=document.getElementById('nu-store').value;
+  if(!username||!fullname||!password){showMsg('user-msg','Please fill all fields.','err');return;}
+  if(getUserByUsername(username)){showMsg('user-msg','Username already exists.','err');return;}
+  users.push({username,password,fullname,roleId,store});buildUsersTable();
+  ['nu-user','nu-full','nu-pass'].forEach(id=>document.getElementById(id).value='');
+  showMsg('user-msg','User "'+username+'" added.','ok');
+}
+
+function removeUser(i){if(users[i].username==='management')return;users.splice(i,1);buildUsersTable();}
+
+function openResetModal(username){
+  resetTargetUsername=username;
+  const u=getUserByUsername(username);
+  document.getElementById('reset-target-name').textContent=u.fullname+' ('+username+')';
+  document.getElementById('reset-new-pass').value='';document.getElementById('reset-confirm-pass').value='';
+  document.getElementById('reset-strength').className='strength-bar';document.getElementById('reset-strength-label').textContent='';
+  document.getElementById('reset-modal-msg').style.display='none';
+  document.getElementById('reset-modal').classList.remove('hidden');
+}
+
+function closeResetModal(){document.getElementById('reset-modal').classList.add('hidden');resetTargetUsername=null;}
+
+function confirmReset(){
+  const np=document.getElementById('reset-new-pass').value;const cp=document.getElementById('reset-confirm-pass').value;
+  if(!np||np.length<6){showMsg('reset-modal-msg','Password must be at least 6 characters.','err');return;}
+  if(np!==cp){showMsg('reset-modal-msg','Passwords do not match.','err');return;}
+  const u=getUserByUsername(resetTargetUsername);if(u)u.password=np;
+  closeResetModal();showMsg('user-msg','Password reset for "'+resetTargetUsername+'" successfully.','ok');buildUsersTable();
+}
+
+function changePassword(){
+  const current=document.getElementById('chpw-current').value;const np=document.getElementById('chpw-new').value;const cp=document.getElementById('chpw-confirm').value;
+  if(current!==currentUser.password){showMsg('chpw-msg','Current password is incorrect.','err');return;}
+  if(!np||np.length<6){showMsg('chpw-msg','New password must be at least 6 characters.','err');return;}
+  if(np===current){showMsg('chpw-msg','New password must be different from current.','err');return;}
+  if(np!==cp){showMsg('chpw-msg','Passwords do not match.','err');return;}
+  currentUser.password=np;const u=getUserByUsername(currentUser.username);if(u)u.password=np;
+  ['chpw-current','chpw-new','chpw-confirm'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('chpw-strength').className='strength-bar';document.getElementById('chpw-strength-label').textContent='';
+  showMsg('chpw-msg','Password updated successfully.','ok');
+}
+
+function checkStrength(inputId,barId){
+  const val=document.getElementById(inputId).value;
+  const bar=document.getElementById(barId);
+  const labelId=barId.replace('strength','strength-label');
+  const label=document.getElementById(labelId);
+  if(!val){bar.className='strength-bar';if(label)label.textContent='';return;}
+  let score=0;
+  if(val.length>=8)score++;if(/[A-Z]/.test(val))score++;if(/[0-9]/.test(val))score++;if(/[^A-Za-z0-9]/.test(val))score++;
+  if(score<=1){bar.className='strength-bar strength-weak';if(label){label.textContent='Weak';label.style.color='#A32D2D';}}
+  else if(score<=2){bar.className='strength-bar strength-medium';if(label){label.textContent='Medium';label.style.color='#854F0B';}}
+  else{bar.className='strength-bar strength-strong';if(label){label.textContent='Strong';label.style.color='#0F6E56';}}
+}
+
+function buildRolesGrid(){
+  const grid=document.getElementById('roles-grid');grid.innerHTML='';
+  roles.forEach(r=>{
+    const tags=r.perms.map(pk=>{const p=ALL_PERMS.find(x=>x.key===pk);return p?`<span class="perm-tag">${p.label}</span>`:''}).join('');
+    grid.innerHTML+=`<div class="role-card"><h4><span class="badge ${r.color}">${r.name}</span>${r.protected?'<span style="font-size:11px;color:var(--text3)">system role</span>':''}</h4><p>${r.perms.length} permission${r.perms.length!==1?'s':''} assigned</p><div class="role-perms">${tags}</div><div class="role-actions"><button class="btn btn-sm btn-primary" onclick="editPerms('${r.id}')">Edit permissions</button>${!r.protected?`<button class="btn btn-sm btn-danger" onclick="removeRole('${r.id}')">Delete</button>`:''}</div></div>`;
+  });
+}
+
+function editPerms(roleId){
+  editingRoleId=roleId;const r=getRoleById(roleId);
+  document.getElementById('editing-role-name').textContent=r.name;
+  const grid=document.getElementById('perm-grid');grid.innerHTML='';
+  ALL_PERMS.forEach(p=>{const checked=r.perms.includes(p.key);const dis=r.protected?'disabled':'';grid.innerHTML+=`<div class="perm-item"><input type="checkbox" id="perm-${p.key}" ${checked?'checked':''} ${dis}><label for="perm-${p.key}" style="cursor:pointer">${p.label}</label></div>`;});
+  document.getElementById('edit-perm-card').classList.remove('hidden');
+  document.getElementById('edit-perm-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function savePerms(){
+  const r=getRoleById(editingRoleId);if(!r||r.protected)return;
+  r.perms=ALL_PERMS.filter(p=>document.getElementById('perm-'+p.key)?.checked).map(p=>p.key);
+  buildRolesGrid();document.getElementById('edit-perm-card').classList.add('hidden');
+  showMsg('role-msg','Permissions for "'+r.name+'" updated.','ok');
+  if(currentUser&&currentUser.roleId===editingRoleId)applyNavPermissions();
+}
+
+function createRole(){
+  const name=document.getElementById('new-role-name').value.trim();const color=document.getElementById('new-role-color').value;
+  if(!name){showMsg('role-msg','Please enter a role name.','err');return;}
+  if(roles.find(r=>r.name.toLowerCase()===name.toLowerCase())){showMsg('role-msg','Role already exists.','err');return;}
+  const id='role_'+Date.now();roles.push({id,name,color,perms:['dashboard'],protected:false});
+  document.getElementById('new-role-name').value='';buildRolesGrid();populateRoleSelect();
+  showMsg('role-msg','Role "'+name+'" created. Click Edit permissions to set access.','ok');
+}
+
+function removeRole(roleId){
+  if(users.find(u=>u.roleId===roleId)){showMsg('role-msg','Cannot delete: users still have this role.','err');return;}
+  roles=roles.filter(r=>r.id!==roleId);buildRolesGrid();populateRoleSelect();
+}
+
+function showMsg(id,text,type){
+  const el=document.getElementById(id);if(!el)return;
+  el.textContent=text;el.className='msg '+(type==='ok'?'msg-ok':'msg-err');el.style.display='block';
+  setTimeout(()=>el.style.display='none',3500);
+}
+
+function startClock(){
+  function tick(){
+    const now=new Date();const h=now.getHours();const m=now.getMinutes();const s=now.getSeconds();
+    const ampm=h>=12?'PM':'AM';const h12=h%12||12;
+    document.getElementById('dash-clock').textContent=String(h12).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    document.getElementById('dash-ampm').textContent=ampm;
+    const greet=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+    document.getElementById('dash-greeting').textContent=greet;
+  }
+  tick();setInterval(tick,1000);
+}
+
+function buildQuickActions(){
+  const grid=document.getElementById('dash-actions-grid');if(!grid)return;grid.innerHTML='';
+  const all=[
+    {perm:'checklist',page:'checklist',nav:'nav-checklist',icon:'ti-checklist',label:'Checklists & Jobs',sub:'Opening, closing & maintenance'},
+    {perm:'utilisation',page:'utilisation',nav:'nav-utilisation',icon:'ti-chart-bar',label:'Utilisation',sub:'Daily consumption'},
+    {perm:'staff',page:'staff',nav:'nav-staff',icon:'ti-id-badge',label:'Staff & HR',sub:'Attendance records'},
+    {perm:'users',page:'users',nav:'nav-users',icon:'ti-user-plus',label:'Manage users',sub:'Add or edit accounts'},
+  ];
+  const visible=all.filter(a=>hasPerm(a.perm));
+  if(visible.length===0){grid.innerHTML='<p style="font-size:13px;color:var(--text2)">No quick actions available for your role.</p>';return;}
+  visible.forEach(a=>{
+    const btn=document.createElement('button');btn.className='quick-action-btn';
+    btn.innerHTML=`<i class="ti ${a.icon}"></i><div><div class="quick-action-label">${a.label}</div><div class="quick-action-sub">${a.sub}</div></div>`;
+    btn.onclick=()=>showPage(a.page,document.getElementById(a.nav));
+    grid.appendChild(btn);
+  });
+}
+// ===== Phase 2: Google Sheets Cloud Sync =====
+const SHEETS_API_URL='https://script.google.com/macros/s/AKfycbxYWn4nrPHSj6EgSxEkT1T_guj2XtU4pl82bVTmnz-d5DKu5SOFOBTOtOO1FTqBA4c5Rw/exec';
+
+function getAppState(){
+  return JSON.stringify({users,roles,stores,storeData});
+}
+
+function migrateStoreData(){
+  stores.forEach(s=>{
+    if(!storeData[s]){initStoreData(s);return;}
+    const sd=storeData[s];
+    if(!sd.checklistTasks)sd.checklistTasks=[...DEFAULT_CHECKLIST_TASKS];
+    if(!sd.maintCategories)sd.maintCategories=defaultMaintCategories();
+    if(!sd.staff)sd.staff=[];
+    if(!sd.utilCategories)sd.utilCategories=[];
+    if(sd.openedDate===undefined)sd.openedDate=null;
+    if(sd.openedTime===undefined)sd.openedTime=null;
+    if(!sd.utilLastDate)sd.utilLastDate=todayStr();
+    if(!sd.utilHistory)sd.utilHistory={};
+    sd.utilCategories.forEach(cat=>{
+      (cat.items||[]).forEach(item=>{
+        if(item.reorderLevel===undefined)item.reorderLevel=5;
+        if(item.opening===undefined)item.opening=0;
+        if(item.consumed===undefined)item.consumed=0;
+        if(item.todayQty===undefined)item.todayQty=0;
+      });
+    });
+    sd.maintCategories.forEach(cat=>{
+      (cat.tasks||[]).forEach(t=>{ if(!t.completions)t.completions={}; });
+    });
+  });
+}
+
+function applyAppState(state){
+  if(!state||typeof state!=='object'||!state.storeData)return false;
+  if(state.users)users=state.users;
+  if(state.roles)roles=state.roles;
+  if(state.stores)stores=state.stores;
+  storeData=state.storeData;
+  migrateStoreData();
+  return true;
+}
+
+async function loadFromCloud(){
+  let state=null;
+  try{
+    const res=await fetch(SHEETS_API_URL,{method:'GET',cache:'no-store'});
+    const text=await res.text();
+    if(text&&text.trim()&&text.trim()!=='{}')state=JSON.parse(text);
+  }catch(err){
+    // Fallback for browsers that block fetch to this endpoint but allow script-tag loading
+    state=await jsonpRequest(SHEETS_API_URL).catch(()=>null);
+  }
+  if(!state||typeof state!=='object'||!state.storeData)return null;
+  return state;
+}
+
+function jsonpRequest(url){
+  return new Promise((resolve,reject)=>{
+    const cbName='__cloudCb'+Date.now()+Math.floor(Math.random()*1e6);
+    const timer=setTimeout(()=>{cleanup();reject(new Error('Timed out'));},15000);
+    function cleanup(){delete window[cbName];if(script.parentNode)script.parentNode.removeChild(script);clearTimeout(timer);}
+    window[cbName]=(data)=>{cleanup();resolve(data);};
+    const script=document.createElement('script');
+    script.src=url+(url.includes('?')?'&':'?')+'callback='+cbName;
+    script.onerror=()=>{cleanup();reject(new Error('Failed to reach cloud'));};
+    document.head.appendChild(script);
+  });
+}
+
+async function saveToCloud(){
+  const body=getAppState();
+  try{
+    const res=await fetch(SHEETS_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+    await res.text().catch(()=>{});
+  }catch(err){
+    // Fallback: fire-and-forget, can't read response either way
+    await fetch(SHEETS_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+  }
+  return true;
+}
+
+function updateSyncStatus(state,msg){
+  const el=document.getElementById('sync-status');
+  const txt=document.getElementById('sync-status-text');
+  const loginTxt=document.getElementById('login-sync-status');
+  if(el){el.classList.remove('syncing','error');if(state==='syncing'||state==='error')el.classList.add(state);}
+  if(txt)txt.textContent=msg;
+  if(loginTxt)loginTxt.textContent=msg;
+}
+
+async function manualSync(){
+  updateSyncStatus('syncing','Syncing…');
+  try{
+    await saveToCloud();
+    const t=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    updateSyncStatus('ok','Synced at '+t);
+  }catch(err){
+    console.error('Sync error:',err);
+    updateSyncStatus('error','Sync failed — tap to retry');
+  }
+}
+
+let autoSyncInterval=null;
+function startAutoSync(){
+  if(autoSyncInterval)clearInterval(autoSyncInterval);
+  autoSyncInterval=setInterval(()=>{ if(currentUser)manualSync(); },60000);
+}
+function stopAutoSync(){ if(autoSyncInterval){clearInterval(autoSyncInterval);autoSyncInterval=null;} if(interactionSyncTimer){clearTimeout(interactionSyncTimer);interactionSyncTimer=null;} }
+
+// Any click/change/input while logged in schedules a sync a few seconds later.
+// Debounced so a burst of actions (e.g. ticking several checklist items) results in one sync.
+let interactionSyncTimer=null;
+function scheduleInteractionSync(){
+  if(!currentUser)return;
+  if(interactionSyncTimer)clearTimeout(interactionSyncTimer);
+  interactionSyncTimer=setTimeout(()=>{ manualSync(); },4000);
+}
+document.addEventListener('click',scheduleInteractionSync,true);
+document.addEventListener('change',scheduleInteractionSync,true);
+document.addEventListener('input',scheduleInteractionSync,true);
+
+window.addEventListener('beforeunload',()=>{
+  if(currentUser){
+    try{ navigator.sendBeacon(SHEETS_API_URL,new Blob([getAppState()],{type:'text/plain;charset=utf-8'})); }catch(e){}
+  }
+});
+
+async function bootstrapCloud(){
+  updateSyncStatus('syncing','Connecting…');
+  try{
+    const state=await loadFromCloud();
+    if(state){
+      applyAppState(state);
+      updateSyncStatus('ok','Synced');
+    } else {
+      updateSyncStatus('syncing','Setting up cloud sync…');
+      await saveToCloud();
+      updateSyncStatus('ok','Synced');
+    }
+  }catch(err){
+    console.error('Cloud sync error:',err);
+    updateSyncStatus('error','Offline — using local data');
+  }
+}
+
+// ===== Session persistence (survives page refresh) + 10-minute inactivity timeout =====
+const SESSION_KEY='talla_session';
+const SESSION_TIMEOUT_MS=10*60*1000;
+
+function saveSession(){
+  if(!currentUser)return;
+  try{ localStorage.setItem(SESSION_KEY,JSON.stringify({username:currentUser.username,lastActivity:Date.now()})); }catch(e){}
+}
+
+function clearSession(){
+  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+}
+
+function restoreSession(){
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    if(!raw)return false;
+    const sess=JSON.parse(raw);
+    if(!sess.username||!sess.lastActivity)return false;
+    if(Date.now()-sess.lastActivity>SESSION_TIMEOUT_MS){clearSession();return false;}
+    const user=getUserByUsername(sess.username);
+    if(!user){clearSession();return false;}
+    currentUser=user;
+    return true;
+  }catch(e){return false;}
+}
+
+// Throttled activity tracker — updates lastActivity at most every 10s
+let lastActivityWrite=0;
+function recordActivity(){
+  if(!currentUser)return;
+  const now=Date.now();
+  if(now-lastActivityWrite<10000)return;
+  lastActivityWrite=now;
+  saveSession();
+}
+document.addEventListener('click',recordActivity,true);
+document.addEventListener('keydown',recordActivity,true);
+document.addEventListener('mousemove',recordActivity,true);
+
+// Checks for inactivity timeout every 15s
+setInterval(()=>{
+  if(!currentUser)return;
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    const sess=raw?JSON.parse(raw):null;
+    const lastActivity=sess?sess.lastActivity:lastActivityWrite;
+    if(Date.now()-lastActivity>SESSION_TIMEOUT_MS){
+      doLogout();
+    }
+  }catch(e){}
+},15000);
+
+initAllStores();
+bootstrapCloud().then(()=>{
+  if(restoreSession()){
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    saveSession();
+    initApp();
+  }
+  document.getElementById('cloud-loading-overlay').classList.add('hidden');
+});
+</script>
+</body>
+</html>
