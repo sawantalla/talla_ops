@@ -67,6 +67,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* STORE BAR */
 .store-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.store-checkbox-row{display:flex;gap:14px;flex-wrap:wrap}
+.store-checkbox-row label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer}
+.store-checkbox-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--teal);cursor:pointer}
 .store-btn{padding:6px 14px;font-size:12px;border-radius:20px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;transition:all 0.15s}
 .store-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
 .store-btn-ho{font-weight:600;border-color:var(--teal);color:var(--teal-dark);background:var(--teal-light)}
@@ -196,6 +199,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .util-header-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:6px 0 8px;border-bottom:0.5px solid var(--border2);margin-bottom:2px}
 .util-col-label{font-size:11px;color:var(--text3);font-weight:500;text-align:center;text-transform:uppercase;letter-spacing:0.04em}
 .util-item-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--border);align-items:center}
+.util-item-row .cl-delete-btn{opacity:0.6}
+.util-item-row .cl-delete-btn:hover{opacity:1}
 .util-item-row:last-child{border-bottom:none}
 .util-row-warn{background:linear-gradient(90deg,#FAEEDA22,transparent)}
 .util-row-empty{background:linear-gradient(90deg,#FCEBEB22,transparent)}
@@ -538,16 +543,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <input type="text" id="util-new-name" placeholder="e.g. Coconut Water"/>
             <select id="util-new-cat"></select>
             <input type="number" id="util-new-reorder" min="0" value="5" title="Low stock alert level" placeholder="Reorder level" style="max-width:130px"/>
-            <button class="btn btn-primary" onclick="addUtilItem()">Add item</button>
           </div>
+          <div style="margin-top:10px">
+            <label style="font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px">Add to store(s):</label>
+            <div id="util-new-item-stores" class="store-checkbox-row"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="addUtilItem()">Add item</button>
           <div style="font-size:11px;color:var(--text3);margin-top:6px">"Reorder level" — show a "Low stock" alert when remaining stock drops to this number or below.</div>
         </div>
         <div class="card" id="util-add-cat-card">
           <h3>Add new category</h3>
           <div class="input-row">
             <input type="text" id="util-new-cat-name" placeholder="e.g. Housekeeping" style="max-width:220px"/>
-            <button class="btn btn-primary" onclick="addUtilCategory()">Add category</button>
           </div>
+          <div style="margin-top:10px">
+            <label style="font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px">Add to store(s):</label>
+            <div id="util-new-cat-stores" class="store-checkbox-row"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="addUtilCategory()">Add category</button>
         </div>
       </div>
       <div id="util-mode-history" class="hidden">
@@ -1516,11 +1529,11 @@ function buildUtil(){
   const isAdmin=hasPerm('utilisation_edit');
   const cats=sd.utilCategories;
 
-  // Show/hide add cards
+  // Adding items/categories is HO-only now; hide these cards in per-store view
   const addCatCard=document.getElementById('util-add-cat-card');
-  if(addCatCard)addCatCard.style.display=isAdmin?'block':'none';
+  if(addCatCard)addCatCard.style.display='none';
   const addItemCard=document.getElementById('util-add-item-card');
-  if(addItemCard)addItemCard.style.display=isAdmin?'block':'none';
+  if(addItemCard)addItemCard.style.display='none';
 
   // Build tabs
   const tabBar=document.getElementById('util-cat-tabs');tabBar.innerHTML='';
@@ -1544,7 +1557,7 @@ function buildUtil(){
   // Build panels
   const panels=document.getElementById('util-cat-panels');panels.innerHTML='';
   const cat=cats.find(c=>c.id===activeUtilCat);
-  if(!cat){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet. Add one below.</p></div>';buildUtilCatSelect(cats);return;}
+  if(!cat){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet. Categories and items are added from the "All Stores (HO)" view.</p></div>';return;}
 
   const panel=document.createElement('div');panel.className='card';
   let html=`<h3>${cat.label}</h3>`;
@@ -1559,41 +1572,41 @@ function buildUtil(){
     const openingCell=isAdmin
       ?`<div class="util-col-stock"><input class="util-stock-input" type="number" min="0" value="${item.opening}" onchange="setOpening('${cat.id}',${i},this.value)"/></div>`
       :`<div class="util-col-stock"><span class="util-stock-val">${item.opening}</span></div>`;
-    const delBtn=isAdmin?`<button class="cl-delete-btn" onclick="deleteUtilItem('${cat.id}',${i})" title="Delete item"><i class="ti ti-trash" style="font-size:13px"></i></button>`:'';
     const reorderEditor=isAdmin
       ?`<span class="util-reorder-edit" title="Edit low stock alert level">Alert ≤<input type="number" min="0" value="${reorderLevel}" onchange="setReorderLevel('${cat.id}',${i},this.value)"></span>`
       :(reorderLevel>0?`<span class="util-reorder-display">Alert ≤ ${reorderLevel}</span>`:'');
     html+=`<div class="util-item-row ${isLow&&!isEmpty?'util-row-warn':''} ${isEmpty?'util-row-empty':''}">
-      <div class="util-col-name"><span class="util-item-name">${item.name}</span>${stockBadge}${reorderEditor}${delBtn}</div>
+      <div class="util-col-name"><span class="util-item-name">${item.name}</span>${stockBadge}${reorderEditor}</div>
       ${openingCell}
       <div class="util-col-stock"><div class="util-qty"><button onclick="changeUtil('${cat.id}',${i},-1)">−</button><span id="uq-${cat.id}-${i}">${item.todayQty}</span><button onclick="changeUtil('${cat.id}',${i},1)">+</button></div></div>
       <div class="util-col-stock"><span class="util-stock-val">${totalConsumed}</span></div>
       <div class="util-col-stock"><span class="util-stock-val" style="font-weight:600;color:${isEmpty?'#A32D2D':isLow?'#854F0B':'var(--text)'}">${remaining}</span></div>
     </div>`;
   });
-  if(!cat.items.length)html+=`<p style="color:var(--text3);font-size:13px;padding:8px 0">No items yet. Add one below.</p>`;
+  if(!cat.items.length)html+=`<p style="color:var(--text3);font-size:13px;padding:8px 0">No items yet. Items are added from the "All Stores (HO)" view.</p>`;
   panel.innerHTML=html;panels.appendChild(panel);
-  buildUtilCatSelect(cats);
 }
 
 function buildUtilHO(){
-  // Hide add cards — read-only aggregate view
-  const addCatCard=document.getElementById('util-add-cat-card');if(addCatCard)addCatCard.style.display='none';
-  const addItemCard=document.getElementById('util-add-item-card');if(addItemCard)addItemCard.style.display='none';
+  const isAdmin=hasPerm('utilisation_edit');
+  // Adding items/categories now happens only from this HO view
+  const addCatCard=document.getElementById('util-add-cat-card');if(addCatCard)addCatCard.style.display=isAdmin?'block':'none';
+  const addItemCard=document.getElementById('util-add-item-card');if(addItemCard)addItemCard.style.display=isAdmin?'block':'none';
 
   // Collect union of categories across all stores (by label)
-  const catMap={}; // label -> {items: {name: {opening,consumed,todayQty}}}
+  const catMap={}; // label -> {items: {name: {opening,consumed,todayQty,reorderLevel,stores:[storeName,...]}}}
   stores.forEach(storeName=>{
     rolloverUtilStock(storeName);
     const sd=storeData[storeName];if(!sd)return;
     sd.utilCategories.forEach(cat=>{
       if(!catMap[cat.label])catMap[cat.label]={items:{}};
       cat.items.forEach(item=>{
-        if(!catMap[cat.label].items[item.name])catMap[cat.label].items[item.name]={opening:0,consumed:0,todayQty:0,reorderLevel:0};
+        if(!catMap[cat.label].items[item.name])catMap[cat.label].items[item.name]={opening:0,consumed:0,todayQty:0,reorderLevel:0,stores:[]};
         catMap[cat.label].items[item.name].opening+=item.opening;
         catMap[cat.label].items[item.name].consumed+=item.consumed;
         catMap[cat.label].items[item.name].todayQty+=item.todayQty;
         catMap[cat.label].items[item.name].reorderLevel+=(item.reorderLevel||0);
+        catMap[cat.label].items[item.name].stores.push(storeName);
       });
     });
   });
@@ -1609,10 +1622,17 @@ function buildUtilHO(){
     btn.onclick=()=>{activeUtilCat=label;buildUtilHO();};
     tabBar.appendChild(btn);
   });
+  if(isAdmin&&labels.length){
+    const delBtn=document.createElement('button');
+    delBtn.className='tab tab-danger';delBtn.title='Delete current category from all stores';
+    delBtn.innerHTML='<i class="ti ti-trash"></i>';
+    delBtn.onclick=()=>deleteUtilCategoryHO();
+    tabBar.appendChild(delBtn);
+  }
 
   // Build panel
   const panels=document.getElementById('util-cat-panels');panels.innerHTML='';
-  if(!activeUtilCat){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories found across any store yet.</p></div>';return;}
+  if(!activeUtilCat){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories found across any store yet.</p></div>';buildUtilCatSelectHO(labels);buildUtilStoreCheckboxes();return;}
 
   const items=catMap[activeUtilCat].items;
   const panel=document.createElement('div');panel.className='card';
@@ -1624,8 +1644,10 @@ function buildUtilHO(){
     const isEmpty=item.opening>0&&remaining===0;
     const isLow=item.opening>0&&!isEmpty&&item.reorderLevel>0&&remaining<=item.reorderLevel;
     const stockBadge=isEmpty?`<span class="badge badge-red">Out of stock</span>`:isLow?`<span class="badge badge-amber">Low stock</span>`:``;
+    const storesLabel=`<span style="font-size:11px;color:var(--text3)">· ${item.stores.join(', ')}</span>`;
+    const delBtn=isAdmin?`<button class="cl-delete-btn" onclick="deleteUtilItemHO('${activeUtilCat.replace(/'/g,"\\'")}','${name.replace(/'/g,"\\'")}')" title="Delete item"><i class="ti ti-trash" style="font-size:13px"></i></button>`:'';
     html+=`<div class="util-item-row ${isLow&&!isEmpty?'util-row-warn':''} ${isEmpty?'util-row-empty':''}">
-      <div class="util-col-name"><span class="util-item-name">${name}</span>${stockBadge}</div>
+      <div class="util-col-name"><span class="util-item-name">${name}</span>${stockBadge}${storesLabel}${delBtn}</div>
       <div class="util-col-stock"><span class="util-stock-val">${item.opening}</span></div>
       <div class="util-col-stock"><span class="util-stock-val">${item.todayQty}</span></div>
       <div class="util-col-stock"><span class="util-stock-val">${totalConsumed}</span></div>
@@ -1634,24 +1656,56 @@ function buildUtilHO(){
   });
   if(!Object.keys(items).length)html+=`<p style="color:var(--text3);font-size:13px;padding:8px 0">No items in this category.</p>`;
   panel.innerHTML=html;panels.appendChild(panel);
+  buildUtilCatSelectHO(labels);
+  buildUtilStoreCheckboxes();
 }
 
-function buildUtilCatSelect(cats){
+// Category dropdown for the Add Item form — union of category labels across all stores
+function buildUtilCatSelectHO(labels){
   const sel=document.getElementById('util-new-cat');if(!sel)return;
   sel.innerHTML='';
-  cats.forEach(cat=>{const o=document.createElement('option');o.value=cat.id;o.textContent=cat.label;sel.appendChild(o);});
+  labels.forEach(label=>{const o=document.createElement('option');o.value=label;o.textContent=label;sel.appendChild(o);});
   if(activeUtilCat)sel.value=activeUtilCat;
+}
+
+// Store checkboxes for the Add Item / Add Category forms (HO view only)
+function buildUtilStoreCheckboxes(){
+  [['util-new-item-stores','uis'],['util-new-cat-stores','ucs']].forEach(([containerId,prefix])=>{
+    const el=document.getElementById(containerId);if(!el)return;
+    el.innerHTML=stores.map(s=>{
+      const id=prefix+'-'+s.replace(/\s+/g,'_');
+      return `<label for="${id}"><input type="checkbox" id="${id}" value="${s}">${s}</label>`;
+    }).join('');
+  });
+}
+
+function getCheckedStores(containerId){
+  return [...document.querySelectorAll('#'+containerId+' input[type=checkbox]:checked')].map(cb=>cb.value);
 }
 
 function addUtilCategory(){
   const inp=document.getElementById('util-new-cat-name');
   const label=inp.value.trim();if(!label)return;
-  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const selectedStores=getCheckedStores('util-new-cat-stores');
+  if(!selectedStores.length){showMsg('util-msg','Select at least one store to add this category to.','err');return;}
   const id='util-'+label.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  if(sd.utilCategories.find(c=>c.id===id)){alert('A category with this name already exists.');return;}
-  sd.utilCategories.push({id,label,items:[]});
-  activeUtilCat=id;
-  inp.value='';buildUtil();
+
+  let addedTo=[],skipped=[];
+  selectedStores.forEach(s=>{
+    const sd=storeData[s];if(!sd)return;
+    if(sd.utilCategories.find(c=>c.id===id)){skipped.push(s);return;}
+    sd.utilCategories.push({id,label,items:[]});
+    addedTo.push(s);
+  });
+
+  activeUtilCat=label;
+  inp.value='';
+  document.querySelectorAll('#util-new-cat-stores input[type=checkbox]').forEach(cb=>cb.checked=false);
+  buildUtil();
+
+  if(addedTo.length&&!skipped.length)showMsg('util-msg',`Category "${label}" added to ${addedTo.join(', ')}.`,'ok');
+  else if(addedTo.length&&skipped.length)showMsg('util-msg',`Added to ${addedTo.join(', ')}. Already existed in ${skipped.join(', ')}.`,'ok');
+  else showMsg('util-msg',`Category "${label}" already exists in all selected stores.`,'err');
 }
 
 function deleteUtilCategory(){
@@ -1660,6 +1714,24 @@ function deleteUtilCategory(){
   if(!confirm(`Delete category "${cat.label}" and all its items?`))return;
   sd.utilCategories=sd.utilCategories.filter(c=>c.id!==activeUtilCat);
   activeUtilCat=sd.utilCategories[0]?sd.utilCategories[0].id:null;
+  buildUtil();
+}
+
+// Deletes a category (by label) and all its items from every store that has it.
+// Used from the All Stores (HO) view.
+function deleteUtilCategoryHO(){
+  const catLabel=activeUtilCat;if(!catLabel)return;
+  const storesWithCat=stores.filter(s=>{
+    const sd=storeData[s];if(!sd)return false;
+    return sd.utilCategories.some(c=>c.label===catLabel);
+  });
+  if(!storesWithCat.length)return;
+  if(!confirm(`Delete category "${catLabel}" and all its items from ${storesWithCat.join(', ')}?`))return;
+  storesWithCat.forEach(s=>{
+    const sd=storeData[s];
+    sd.utilCategories=sd.utilCategories.filter(c=>c.label!==catLabel);
+  });
+  activeUtilCat=null;
   buildUtil();
 }
 
@@ -1692,16 +1764,36 @@ function changeUtil(catId,i,delta){
 }
 
 function addUtilItem(){
-  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
   const name=document.getElementById('util-new-name').value.trim();
-  const catId=document.getElementById('util-new-cat').value;
+  const catLabel=document.getElementById('util-new-cat').value;
   const reorderLevel=Math.max(0,parseInt(document.getElementById('util-new-reorder').value)||0);
+  const selectedStores=getCheckedStores('util-new-item-stores');
   if(!name)return;
-  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
-  cat.items.push({name,opening:0,consumed:0,todayQty:0,reorderLevel});
-  activeUtilCat=catId;buildUtil();
+  if(!catLabel){showMsg('util-msg','Add a category first.','err');return;}
+  if(!selectedStores.length){showMsg('util-msg','Select at least one store to add this item to.','err');return;}
+
+  let addedTo=[],skipped=[];
+  selectedStores.forEach(s=>{
+    const sd=storeData[s];if(!sd)return;
+    let cat=sd.utilCategories.find(c=>c.label===catLabel);
+    if(!cat){
+      const id='util-'+catLabel.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      cat={id,label:catLabel,items:[]};
+      sd.utilCategories.push(cat);
+    }
+    if(cat.items.find(it=>it.name.toLowerCase()===name.toLowerCase())){skipped.push(s);return;}
+    cat.items.push({name,opening:0,consumed:0,todayQty:0,reorderLevel});
+    addedTo.push(s);
+  });
+
+  activeUtilCat=catLabel;buildUtil();
   document.getElementById('util-new-name').value='';
   document.getElementById('util-new-reorder').value='5';
+  document.querySelectorAll('#util-new-item-stores input[type=checkbox]').forEach(cb=>cb.checked=false);
+
+  if(addedTo.length&&!skipped.length)showMsg('util-msg',`"${name}" added to ${addedTo.join(', ')}.`,'ok');
+  else if(addedTo.length&&skipped.length)showMsg('util-msg',`Added to ${addedTo.join(', ')}. Already existed in ${skipped.join(', ')}.`,'ok');
+  else showMsg('util-msg',`"${name}" already exists in all selected stores.`,'err');
 }
 
 function deleteUtilItem(catId,i){
@@ -1709,6 +1801,24 @@ function deleteUtilItem(catId,i){
   const sd=storeData[getActiveStore()];if(!sd)return;
   const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
   cat.items.splice(i,1);buildUtil();
+}
+
+// Deletes an item (matched by name within a category label) from every store that has it.
+// Used from the All Stores (HO) view, where items are managed centrally.
+function deleteUtilItemHO(catLabel,itemName){
+  const storesWithItem=stores.filter(s=>{
+    const sd=storeData[s];if(!sd)return false;
+    const cat=sd.utilCategories.find(c=>c.label===catLabel);
+    return cat&&cat.items.some(it=>it.name===itemName);
+  });
+  if(!storesWithItem.length)return;
+  if(!confirm(`Delete "${itemName}" from ${storesWithItem.join(', ')}? This removes it everywhere it currently exists.`))return;
+  storesWithItem.forEach(s=>{
+    const sd=storeData[s];
+    const cat=sd.utilCategories.find(c=>c.label===catLabel);
+    cat.items=cat.items.filter(it=>it.name!==itemName);
+  });
+  buildUtil();
 }
 
 function switchUtilMode(mode){
@@ -2388,15 +2498,28 @@ function jsonpRequest(url){
 }
 
 async function saveToCloud(){
-  const body=getAppState();
+  const syncToken=Date.now()+'-'+Math.floor(Math.random()*1e6);
+  const payload=JSON.parse(getAppState());
+  payload._syncToken=syncToken;
+  const body=JSON.stringify(payload);
+
+  let primaryOk=false;
   try{
     const res=await fetch(SHEETS_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-    await res.text().catch(()=>{});
-  }catch(err){
-    // Fallback: fire-and-forget, can't read response either way
-    await fetch(SHEETS_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-  }
-  return true;
+    if(res.ok){ await res.text().catch(()=>{}); primaryOk=true; }
+  }catch(err){ /* fall through to no-cors + verification below */ }
+
+  if(primaryOk)return true;
+
+  // Primary fetch failed (likely CORS). Fire the no-cors fallback, which cannot report
+  // success/failure to JS — so we verify independently by reading back what's actually stored.
+  try{ await fetch(SHEETS_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body}); }catch(e){}
+
+  await new Promise(r=>setTimeout(r,1500));
+  const verify=await loadFromCloud().catch(()=>null);
+  if(verify&&verify._syncToken===syncToken)return true;
+
+  throw new Error('Save could not be verified — the cloud still shows older data.');
 }
 
 function updateSyncStatus(state,msg){
@@ -2416,7 +2539,7 @@ async function manualSync(){
     updateSyncStatus('ok','Synced at '+t);
   }catch(err){
     console.error('Sync error:',err);
-    updateSyncStatus('error','Sync failed — tap to retry');
+    updateSyncStatus('error','Sync failed — changes saved on this device only. Tap to retry.');
   }
 }
 
