@@ -442,13 +442,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="page-checklist" class="page">
       <div class="page-header"><h1>Checklists &amp; Jobs</h1><p>Store checklists and maintenance reminders</p></div>
       <div id="cl-store-bar" class="store-bar"></div>
-      <div class="tab-bar">
+      <div id="cl-ho-notice" class="card hidden" style="margin-bottom:16px">
+        <p style="font-size:13px;color:var(--text2)">You're in <strong>All Stores (HO)</strong> mode. This view is only for adding maintenance reminders and store checklist tasks to one or more stores at once. Select an individual store above to view or tick off its checklists.</p>
+      </div>
+      <div class="tab-bar" id="cl-tab-bar">
         <button class="tab active" onclick="switchClTab(this,'cl-maint')">Gen. Maintenance Reminder</button>
         <button class="tab" onclick="switchClTab(this,'cl-checklist')">Store Checklists</button>
       </div>
 
       <div id="cl-checklist" class="hidden">
-        <div class="card">
+        <div class="card" id="cl-checklist-view-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <h3 style="margin:0">Store checklist <span class="badge badge-amber" id="checklist-prog">0 / 0 done</span></h3>
           </div>
@@ -457,15 +460,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
         <div class="card" id="cl-add-checklist" style="display:none">
           <h3>Add task to checklist</h3>
+          <div class="msg" id="checklist-msg"></div>
           <div class="input-row">
             <input type="text" id="new-checklist-task" placeholder="e.g. Count opening cash float"/>
-            <button class="btn btn-primary" onclick="addChecklistTask('checklist')">Add task</button>
           </div>
+          <div id="cl-checklist-ho-stores" class="hidden" style="margin-top:10px">
+            <label style="font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px">Add to store(s):</label>
+            <div id="cl-new-checklist-stores" class="store-checkbox-row"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="addChecklistTask('checklist')">Add task</button>
         </div>
       </div>
 
       <div id="cl-maint">
-        <div class="util-mode-bar">
+        <div class="util-mode-bar" id="cl-maint-mode-bar">
           <button class="util-mode-btn active" id="maintmode-current" onclick="switchMaintMode('current')">&#9654; Current</button>
           <button class="util-mode-btn" id="maintmode-history" onclick="switchMaintMode('history')">&#128197; History</button>
         </div>
@@ -473,10 +481,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="tab-bar" id="maint-cat-tabs"></div>
           <div id="maint-cat-panels"></div>
           <div class="card" id="cl-add-maint" style="display:none">
-            <h3>Add reminder to this category</h3>
+            <h3>Add reminder<span id="cl-maint-cat-label-current"> to this category</span></h3>
             <div class="msg" id="maint-add-msg"></div>
             <div class="input-row">
               <input type="text" id="new-maint-task" placeholder="e.g. Service air conditioning unit"/>
+              <select id="new-maint-cat-ho" class="hidden"></select>
               <select id="new-maint-freq" onchange="updateMaintFreqOptions()">
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
@@ -498,15 +507,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
                 <option value="6">Every 6th month</option>
               </select>
               <input type="date" id="new-maint-date" title="Reminder date" style="max-width:160px"/>
-              <button class="btn btn-primary" onclick="addMaintTask()">Add task</button>
             </div>
+            <div id="cl-maint-ho-stores" class="hidden" style="margin-top:10px">
+              <label style="font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px">Add to store(s):</label>
+              <div id="cl-new-maint-stores" class="store-checkbox-row"></div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:10px" onclick="addMaintTask()">Add task</button>
           </div>
           <div class="card" id="maint-add-cat-card">
             <h3>Add new category</h3>
             <div class="input-row">
               <input type="text" id="maint-new-cat-name" placeholder="e.g. Electrical" style="max-width:220px"/>
-              <button class="btn btn-primary" onclick="addMaintCategory()">Add category</button>
             </div>
+            <div id="cl-maint-cat-ho-stores" class="hidden" style="margin-top:10px">
+              <label style="font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px">Add to store(s):</label>
+              <div id="cl-new-maint-cat-stores" class="store-checkbox-row"></div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:10px" onclick="addMaintCategory()">Add category</button>
           </div>
         </div>
         <div id="maint-mode-history" class="hidden">
@@ -1196,19 +1213,15 @@ function buildStoreSwitcher(barId, onSwitch, includeHO){
 const CL_TASK_KEY={checklist:'checklistTasks'};
 
 function buildChecklist(type){
-  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const s=getActiveStore();if(s==='HO')return;
+  const sd=storeData[s];if(!sd)return;
   const tasks=sd[CL_TASK_KEY[type]];
   const listId=type+'-list';const progId=type+'-prog';const barId=type+'-bar';
   const isAdmin=hasPerm('checklist_edit');
   const el=document.getElementById(listId);el.innerHTML='';
-  buildStoreSwitcher('cl-store-bar',()=>{
-    buildChecklist('checklist');
-    const histMode=document.getElementById('maint-mode-history');
-    if(histMode&&!histMode.classList.contains('hidden'))buildMaintHistoryTabs();
-    else buildMaintCategories();
-  });
+  // Adding tasks is HO-only now; hide this card in per-store view
   const addCard=document.getElementById('cl-add-'+type);
-  if(addCard)addCard.style.display=isAdmin?'block':'none';
+  if(addCard)addCard.style.display='none';
   tasks.forEach((t,i)=>{
     const d=document.createElement('div');d.className='checklist-item';
     const taskText=isAdmin
@@ -1218,6 +1231,7 @@ function buildChecklist(type){
     d.innerHTML=`<input type="checkbox" onchange="updateProg('${listId}','${progId}','${barId}',${tasks.length})">${taskText}${deleteBtn}`;
     el.appendChild(d);
   });
+  if(!tasks.length)el.innerHTML='<p style="color:var(--text3);font-size:13px;padding:8px 0">No tasks yet. Tasks are added from the "All Stores (HO)" view.</p>';
   updateProg(listId,progId,barId,tasks.length);
 }
 
@@ -1235,16 +1249,86 @@ function updateProg(listId, progId, barId, total){
 }
 
 function rebuildChecklists(){
+  buildStoreSwitcher('cl-store-bar',()=>rebuildChecklists(),true);
+  const isHO=getActiveStore()==='HO';
+  const isAdmin=hasPerm('checklist_edit');
+
+  document.getElementById('cl-ho-notice').classList.toggle('hidden',!isHO);
+  document.getElementById('cl-checklist-view-card').classList.toggle('hidden',isHO);
+  document.getElementById('cl-maint-mode-bar').classList.toggle('hidden',isHO);
+  document.getElementById('maint-cat-tabs').classList.toggle('hidden',isHO);
+  document.getElementById('maint-cat-panels').classList.toggle('hidden',isHO);
+  document.getElementById('maint-mode-history').classList.add('hidden');
+  document.getElementById('maint-mode-current').classList.remove('hidden');
+  document.getElementById('maintmode-current').classList.add('active');
+  document.getElementById('maintmode-history').classList.remove('active');
+
+  document.getElementById('cl-checklist-ho-stores').classList.toggle('hidden',!isHO);
+  document.getElementById('cl-maint-ho-stores').classList.toggle('hidden',!isHO);
+  document.getElementById('cl-maint-cat-ho-stores').classList.toggle('hidden',!isHO);
+
+  if(isHO){
+    document.getElementById('cl-add-checklist').style.display=isAdmin?'block':'none';
+    document.getElementById('cl-add-maint').style.display=isAdmin?'block':'none';
+    document.getElementById('maint-add-cat-card').style.display=isAdmin?'block':'none';
+    buildClStoreCheckboxes();
+    buildMaintCatSelectHO();
+    const newDateInput=document.getElementById('new-maint-date');
+    if(newDateInput)newDateInput.min=todayStr();
+    return;
+  }
+
+  document.getElementById('new-maint-cat-ho').classList.add('hidden');
+  document.getElementById('cl-maint-cat-label-current').classList.remove('hidden');
   buildChecklist('checklist');
   buildMaintCategories();
 }
 
+// Union of maintenance category labels across all stores, for the HO add-task dropdown
+function buildMaintCatSelectHO(){
+  const sel=document.getElementById('new-maint-cat-ho');if(!sel)return;
+  sel.classList.remove('hidden');
+  document.getElementById('cl-maint-cat-label-current').classList.add('hidden');
+  const labels=[];
+  stores.forEach(s=>{
+    const sd=storeData[s];if(!sd)return;
+    sd.maintCategories.forEach(cat=>{ if(!labels.includes(cat.label))labels.push(cat.label); });
+  });
+  const prevVal=sel.value;
+  sel.innerHTML=labels.map(l=>`<option value="${l}">${l}</option>`).join('');
+  if(labels.includes(prevVal))sel.value=prevVal;
+}
+
+function buildClStoreCheckboxes(){
+  [['cl-new-checklist-stores','ccs'],['cl-new-maint-stores','cms'],['cl-new-maint-cat-stores','cmcs']].forEach(([containerId,prefix])=>{
+    const el=document.getElementById(containerId);if(!el)return;
+    el.innerHTML=stores.map(s=>{
+      const id=prefix+'-'+s.replace(/\s+/g,'_');
+      return `<label for="${id}"><input type="checkbox" id="${id}" value="${s}">${s}</label>`;
+    }).join('');
+  });
+}
+
 function addChecklistTask(type){
-  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
-  const inputId='new-'+type+'-task';
-  const val=document.getElementById(inputId).value.trim();if(!val)return;
+  const s=getActiveStore();
+  const val=document.getElementById('new-'+type+'-task').value.trim();if(!val)return;
+
+  if(s==='HO'){
+    const selectedStores=getCheckedStores('cl-new-checklist-stores');
+    if(!selectedStores.length){showMsg('checklist-msg','Select at least one store to add this task to.','err');return;}
+    selectedStores.forEach(store=>{
+      const sd=storeData[store];if(!sd)return;
+      sd[CL_TASK_KEY[type]].push(val);
+    });
+    document.getElementById('new-'+type+'-task').value='';
+    document.querySelectorAll('#cl-new-checklist-stores input[type=checkbox]').forEach(cb=>cb.checked=false);
+    showMsg('checklist-msg',`Task added to ${selectedStores.join(', ')}.`,'ok');
+    return;
+  }
+
+  const sd=storeData[s];if(!sd)return;
   sd[CL_TASK_KEY[type]].push(val);
-  document.getElementById(inputId).value='';rebuildChecklists();
+  document.getElementById('new-'+type+'-task').value='';rebuildChecklists();
 }
 
 function deleteChecklistTask(type,i){
@@ -1263,12 +1347,14 @@ function renameTask(type,i,newText){
 let activeMaintCat=null;
 
 function buildMaintCategories(){
-  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const s=getActiveStore();if(s==='HO')return;
+  const sd=storeData[s];if(!sd)return;
   const isAdmin=hasPerm('checklist_edit');
   const cats=sd.maintCategories;
 
+  // Adding categories/reminders is HO-only now; hide these cards in per-store view
   const addCatCard=document.getElementById('maint-add-cat-card');
-  if(addCatCard)addCatCard.style.display=isAdmin?'block':'none';
+  if(addCatCard)addCatCard.style.display='none';
 
   // Build tabs
   const tabBar=document.getElementById('maint-cat-tabs');tabBar.innerHTML='';
@@ -1291,15 +1377,12 @@ function buildMaintCategories(){
   // Build panel
   const panels=document.getElementById('maint-cat-panels');panels.innerHTML='';
   const addCard=document.getElementById('cl-add-maint');
+  if(addCard)addCard.style.display='none';
   const cat=cats.find(c=>c.id===activeMaintCat);
   if(!cat){
-    panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet. Add one below.</p></div>';
-    if(addCard)addCard.style.display='none';
+    panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet. Categories and reminders are added from the "All Stores (HO)" view.</p></div>';
     return;
   }
-  if(addCard)addCard.style.display=isAdmin?'block':'none';
-  const newDateInput=document.getElementById('new-maint-date');
-  if(newDateInput)newDateInput.min=todayStr();
 
   const panel=document.createElement('div');panel.className='card';
   panel.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -1371,8 +1454,29 @@ function computeNextMaintDate(dateStr,freq,monthInterval,weekOf){
 function addMaintCategory(){
   const inp=document.getElementById('maint-new-cat-name');
   const label=inp.value.trim();if(!label)return;
-  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
+  const s=getActiveStore();
   const id='maint-'+label.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+  if(s==='HO'){
+    const selectedStores=getCheckedStores('cl-new-maint-cat-stores');
+    if(!selectedStores.length){showMsg('maint-add-msg','Select at least one store to add this category to.','err');return;}
+    let addedTo=[],skipped=[];
+    selectedStores.forEach(store=>{
+      const sd=storeData[store];if(!sd)return;
+      if(sd.maintCategories.find(c=>c.id===id)){skipped.push(store);return;}
+      sd.maintCategories.push({id,label,tasks:[]});
+      addedTo.push(store);
+    });
+    inp.value='';
+    document.querySelectorAll('#cl-new-maint-cat-stores input[type=checkbox]').forEach(cb=>cb.checked=false);
+    buildMaintCatSelectHO();
+    if(addedTo.length&&!skipped.length)showMsg('maint-add-msg',`Category "${label}" added to ${addedTo.join(', ')}.`,'ok');
+    else if(addedTo.length&&skipped.length)showMsg('maint-add-msg',`Added to ${addedTo.join(', ')}. Already existed in ${skipped.join(', ')}.`,'ok');
+    else showMsg('maint-add-msg',`Category "${label}" already exists in all selected stores.`,'err');
+    return;
+  }
+
+  const sd=storeData[s];if(!sd)return;
   if(sd.maintCategories.find(c=>c.id===id)){alert('A category with this name already exists.');return;}
   sd.maintCategories.push({id,label,tasks:[]});
   activeMaintCat=id;
@@ -1395,8 +1499,7 @@ function updateMaintFreqOptions(){
 }
 
 function addMaintTask(){
-  const s=getActiveStore();const sd=storeData[s];if(!sd)return;
-  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
+  const s=getActiveStore();
   const val=document.getElementById('new-maint-task').value.trim();if(!val)return;
   const freq=document.getElementById('new-maint-freq').value;
   const weekOf=freq==='weekly'?parseInt(document.getElementById('new-maint-week').value):null;
@@ -1413,6 +1516,34 @@ function addMaintTask(){
     infoMsg=`Today is the start date, so the next reminder (based on ${freq} frequency) is set for ${fmt}.`;
   }
 
+  if(s==='HO'){
+    const catLabel=document.getElementById('new-maint-cat-ho').value;
+    const selectedStores=getCheckedStores('cl-new-maint-stores');
+    if(!catLabel){showMsg('maint-add-msg','Add a category first.','err');return;}
+    if(!selectedStores.length){showMsg('maint-add-msg','Select at least one store to add this reminder to.','err');return;}
+    let addedTo=[];
+    selectedStores.forEach(store=>{
+      const sd=storeData[store];if(!sd)return;
+      let cat=sd.maintCategories.find(c=>c.label===catLabel);
+      if(!cat){
+        const id='maint-'+catLabel.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+        cat={id,label:catLabel,tasks:[]};
+        sd.maintCategories.push(cat);
+      }
+      cat.tasks.push({name:val,frequency:freq,weekOf,monthInterval,date,completions:{}});
+      addedTo.push(store);
+    });
+    document.getElementById('new-maint-task').value='';
+    dateInput.value='';
+    document.getElementById('new-maint-freq').value='daily';
+    updateMaintFreqOptions();
+    document.querySelectorAll('#cl-new-maint-stores input[type=checkbox]').forEach(cb=>cb.checked=false);
+    showMsg('maint-add-msg',(infoMsg?infoMsg+' ':'')+`Added to ${addedTo.join(', ')}.`,'ok');
+    return;
+  }
+
+  const sd=storeData[s];if(!sd)return;
+  const cat=sd.maintCategories.find(c=>c.id===activeMaintCat);if(!cat)return;
   cat.tasks.push({name:val,frequency:freq,weekOf,monthInterval,date,completions:{}});
   document.getElementById('new-maint-task').value='';
   dateInput.value='';
@@ -2434,6 +2565,22 @@ function getAppState(){
   return JSON.stringify({users,roles,stores,storeData});
 }
 
+const LOCAL_STATE_KEY='talla_local_state';
+
+function cacheStateLocally(){
+  try{ localStorage.setItem(LOCAL_STATE_KEY,getAppState()); }catch(e){}
+}
+
+function loadLocalCache(){
+  try{
+    const raw=localStorage.getItem(LOCAL_STATE_KEY);
+    if(!raw)return null;
+    const state=JSON.parse(raw);
+    if(!state||!state.storeData)return null;
+    return state;
+  }catch(e){return null;}
+}
+
 function migrateStoreData(){
   stores.forEach(s=>{
     if(!storeData[s]){initStoreData(s);return;}
@@ -2533,6 +2680,7 @@ function updateSyncStatus(state,msg){
 
 async function manualSync(){
   updateSyncStatus('syncing','Syncing…');
+  cacheStateLocally();
   try{
     await saveToCloud();
     const t=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
@@ -2570,18 +2718,30 @@ window.addEventListener('beforeunload',()=>{
 
 async function bootstrapCloud(){
   updateSyncStatus('syncing','Connecting…');
+  const localCache=loadLocalCache();
   try{
     const state=await loadFromCloud();
     if(state){
+      // Cloud has data — but if our local cache is more recent (e.g. cloud save failed earlier,
+      // or this device made changes that never made it up), prefer local so nothing is lost.
       applyAppState(state);
       updateSyncStatus('ok','Synced');
+      cacheStateLocally();
+    } else if(localCache){
+      // Cloud appears empty/unreachable, but we have local data from a previous session on this device.
+      applyAppState(localCache);
+      updateSyncStatus('error','Offline — using local data');
     } else {
       updateSyncStatus('syncing','Setting up cloud sync…');
       await saveToCloud();
       updateSyncStatus('ok','Synced');
+      cacheStateLocally();
     }
   }catch(err){
     console.error('Cloud sync error:',err);
+    if(localCache){
+      applyAppState(localCache);
+    }
     updateSyncStatus('error','Offline — using local data');
   }
 }
