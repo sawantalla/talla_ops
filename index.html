@@ -199,6 +199,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .util-header-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:6px 0 8px;border-bottom:0.5px solid var(--border2);margin-bottom:2px}
 .util-col-label{font-size:11px;color:var(--text3);font-weight:500;text-align:center;text-transform:uppercase;letter-spacing:0.04em}
 .util-item-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--border);align-items:center}
+.drag-handle{cursor:grab;color:var(--text3);padding:0 6px;font-size:16px;line-height:1;user-select:none;flex-shrink:0}
+.drag-handle:active{cursor:grabbing}
+.dragging{opacity:0.4;background:var(--bg2)}
+.drag-over{border-top:2px solid var(--teal)!important}
+.stores-list-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:0.5px solid var(--border);cursor:default}
+.stores-list-row:last-child{border-bottom:none}
 .util-item-row .cl-delete-btn{opacity:0.6}
 .util-item-row .cl-delete-btn:hover{opacity:1}
 .util-item-row:last-child{border-bottom:none}
@@ -387,11 +393,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="nav-item" id="nav-checklist" onclick="showPage('checklist',this)"><i class="ti ti-checklist"></i> Checklists &amp; Jobs</div>
     <span class="nav-section">Business</span>
     <div class="nav-item" id="nav-utilisation" onclick="showPage('utilisation',this)"><i class="ti ti-chart-bar"></i> Utilisation</div>
+    <div class="nav-item" id="nav-allotments" onclick="showPage('allotments',this)"><i class="ti ti-package"></i> Allotments</div>
     <span class="nav-section">People</span>
     <div class="nav-item" id="nav-staff" onclick="showPage('staff',this)"><i class="ti ti-id-badge"></i> Staff & HR</div>
     <span class="nav-section" id="admin-section">Admin</span>
     <div class="nav-item" id="nav-users" onclick="showPage('users',this)"><i class="ti ti-user-plus"></i> Users</div>
     <div class="nav-item" id="nav-roles" onclick="showPage('roles',this)"><i class="ti ti-shield"></i> Roles & permissions</div>
+    <div class="nav-item" id="nav-sessions" onclick="showPage('sessions',this)"><i class="ti ti-activity"></i> Sessions</div>
     <span class="nav-section">Account</span>
     <div class="nav-item" id="nav-myaccount" onclick="showPage('myaccount',this)"><i class="ti ti-user-circle"></i> My account</div>
   </div>
@@ -411,6 +419,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
       <div class="stat-grid">
+        <div id="dash-allotment-notif" style="display:none;grid-column:1/-1"></div>
         <div class="stat-card"><span class="stat-label">Stores opened</span><span class="stat-val" id="dash-stat-opened">0/4</span><span class="stat-sub">today</span></div>
         <div class="stat-card"><span class="stat-label">Out of stock</span><span class="stat-val" id="dash-stat-outofstock">0</span><span class="stat-sub">items</span></div>
         <div class="stat-card"><span class="stat-label">Reordering</span><span class="stat-val" id="dash-stat-reorder">0</span><span class="stat-sub">low stock items</span></div>
@@ -594,6 +603,64 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
+    <!-- ALLOTMENTS -->
+    <div id="page-allotments" class="page">
+      <div class="page-header"><h1>Allotments</h1><p>Request and approve stock allotments per store</p></div>
+      <div id="al-store-bar" class="store-bar"></div>
+      <div class="tab-bar">
+        <button class="tab active" onclick="switchAlTab(this,'al-requests')">Requests</button>
+        <button class="tab" onclick="switchAlTab(this,'al-history')">History</button>
+      </div>
+
+      <!-- REQUESTS TAB -->
+      <div id="al-requests">
+        <!-- Manager: raise new request form (only shown when no pending request) -->
+        <div class="card" id="al-raise-card" style="display:none">
+          <h3>Raise New Request</h3>
+          <div class="msg" id="al-raise-msg"></div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px">Category</label>
+            <select id="al-cat-select" onchange="buildAlItemInputs()" style="padding:8px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;min-width:200px"></select>
+          </div>
+          <div id="al-item-inputs"></div>
+          <div style="margin-top:12px">
+            <label style="font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px">Notes (optional)</label>
+            <input type="text" id="al-notes" placeholder="Any notes for Management…" style="width:100%;max-width:420px;padding:8px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none"/>
+          </div>
+          <button class="btn btn-primary" style="margin-top:14px" onclick="submitAllotmentRequest()">Submit Request</button>
+        </div>
+
+        <!-- Manager: existing pending request -->
+        <div class="card" id="al-pending-card" style="display:none">
+          <div id="al-pending-content"></div>
+        </div>
+
+        <!-- Management: approve/reject panel -->
+        <div class="card" id="al-approve-card" style="display:none">
+          <h3>Pending Request</h3>
+          <div id="al-approve-content"></div>
+        </div>
+
+        <div id="al-no-pending" class="card" style="display:none">
+          <p style="font-size:13px;color:var(--text3)">No pending requests from this store. You can raise one below on their behalf.</p>
+        </div>
+      </div>
+
+      <!-- HISTORY TAB -->
+      <div id="al-history" class="hidden">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--text2);font-weight:500">View:</label>
+          <select id="al-hist-view" onchange="buildAlHistory()" style="padding:6px 10px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div class="tab-bar" id="al-hist-cat-tabs"></div>
+        <div id="al-hist-panels"></div>
+      </div>
+    </div>
+
     <!-- STAFF -->
     <div id="page-staff" class="page">
       <div class="page-header"><h1>Staff & HR</h1><p>Attendance and team records</p></div>
@@ -658,6 +725,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
+    <!-- SESSIONS -->
+    <div id="page-sessions" class="page">
+      <div class="page-header"><h1>Sessions</h1><p>Login activity and real-time presence — last 30 days</p></div>
+
+      <!-- Currently online -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <h3 style="margin:0">Currently online</h3>
+          <span style="font-size:11px;color:var(--text3)" id="sess-refresh-label">Auto-refreshes every 30s</span>
+        </div>
+        <div id="sess-online-list"><p style="font-size:13px;color:var(--text3)">No one online right now.</p></div>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <select id="sess-filter-days" onchange="buildSessionsPage()" style="padding:7px 12px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+          <option value="7">Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30" selected>Last 30 days</option>
+        </select>
+        <select id="sess-filter-store" onchange="buildSessionsPage()" style="padding:7px 12px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+          <option value="all">All stores</option>
+        </select>
+        <select id="sess-filter-user" onchange="buildSessionsPage()" style="padding:7px 12px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none">
+          <option value="all">All users</option>
+        </select>
+        <span style="font-size:12px;color:var(--text3)" id="sess-count"></span>
+      </div>
+
+      <!-- Log table -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div id="sess-log-table"></div>
+      </div>
+    </div>
+
     <!-- MY ACCOUNT -->
     <div id="page-myaccount" class="page">
       <div class="page-header"><h1>My account</h1><p>View your profile and change your password</p></div>
@@ -698,6 +800,9 @@ const ALL_PERMS=[
   {key:"checklist_edit",label:"Checklists — add/edit/delete tasks"},
   {key:"utilisation",label:"Utilisation — view & log usage"},
   {key:"utilisation_edit",label:"Utilisation — manage stock & categories"},
+  {key:"allotments",label:"Allotments — view & raise requests"},
+  {key:"allotments_approve",label:"Allotments — approve & reject"},
+  {key:"sessions",label:"Sessions — view login activity"},
   {key:"staff",label:"Staff & HR — view & mark attendance"},
   {key:"staff_edit",label:"Staff & HR — add/remove staff"},
   {key:"stores",label:"Manage stores"},
@@ -708,7 +813,7 @@ const ALL_PERMS=[
 let roles=[
   {id:"management",name:"Management",color:"badge-purple",perms:ALL_PERMS.map(p=>p.key),protected:true},
   {id:"admin",name:"Admin",color:"badge-blue",perms:[],protected:false},
-  {id:"manager",name:"Store Manager",color:"badge-green",perms:["dashboard","checklist","utilisation","staff"],protected:false},
+  {id:"manager",name:"Store Manager",color:"badge-green",perms:["dashboard","checklist","utilisation","allotments","staff"],protected:false},
   {id:"viewer",name:"Viewer",color:"badge-gray",perms:["dashboard","utilisation"],protected:false},
 ];
 
@@ -739,6 +844,7 @@ function getUtilHistory(s){
 }
 
 let stores=["Gandhi Nagar","Janipur","Udhampur","Lakhdata Bazar"];
+let sessionLog=[]; // Global login/logout audit log
 
 // Returns a Date object as a local-time "YYYY-MM-DD" string (avoids UTC shift from toISOString)
 function fmtDateLocal(d){
@@ -780,7 +886,14 @@ function initStoreData(s){
     openedDate:null,
     openedTime:null,
     utilLastDate:todayStr(),
-    utilHistory:{}
+    utilHistory:{},
+    allotments:{
+      request:null,
+      balances:{},
+      history:[],
+      rejectedNotifications:[],
+      pendingNotification:false
+    }
   };
 }
 function initAllStores(){ stores.forEach(s=>initStoreData(s)); }
@@ -837,12 +950,15 @@ function doLogin(){
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app-screen').classList.remove('hidden');
   saveSession();
+  startSessionEntry();
   initApp();
 }
 
 function doLogout(){
+  endSessionEntry('manual');
   manualSync();
   stopAutoSync();
+  stopSessionsAutoRefresh();
   clearSession();
   currentUser=null;
   document.getElementById('login-screen').classList.remove('hidden');
@@ -851,6 +967,7 @@ function doLogout(){
 }
 
 function initApp(){
+  migrateRoles();
   const r=getRoleById(currentUser.roleId);
   document.getElementById('u-name').textContent=currentUser.fullname;
   document.getElementById('u-role').textContent=r.name;
@@ -865,6 +982,8 @@ function initApp(){
   buildUtil();buildStaff();buildUsersTable();buildRolesGrid();populateRoleSelect();populateStoreSelect();buildStoresList();
   showPage('dashboard',document.getElementById('nav-dashboard'));
   startAutoSync();
+  startSessionsAutoRefresh();
+  buildDashAllotmentNotif();
 }
 
 function buildProfile(){
@@ -876,7 +995,7 @@ function buildProfile(){
 }
 
 function applyNavPermissions(){
-  const map={dashboard:'nav-dashboard',checklist:'nav-checklist',utilisation:'nav-utilisation',staff:'nav-staff',users:'nav-users',roles:'nav-roles'};
+  const map={dashboard:'nav-dashboard',checklist:'nav-checklist',utilisation:'nav-utilisation',allotments:'nav-allotments',staff:'nav-staff',users:'nav-users',roles:'nav-roles',sessions:'nav-sessions'};
   const editMap={checklist:'checklist_edit',utilisation:'utilisation_edit',staff:'staff_edit'};
   Object.entries(map).forEach(([perm,navId])=>{
     const el=document.getElementById(navId);if(!el)return;
@@ -1160,10 +1279,12 @@ function showPage(id,navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');
   if(navEl)navEl.classList.add('active');
-  if(id==='dashboard'){buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();}
+  if(id==='dashboard'){buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();buildDashAllotmentNotif();}
   else if(id==='checklist'){rebuildChecklists();}
   else if(id==='utilisation'){buildUtil();}
+  else if(id==='allotments'){buildAllotments();}
   else if(id==='staff'){buildStaff();}
+  else if(id==='sessions'){buildSessionsPage();}
   else if(id==='users'){buildUsersTable();populateStoreSelect();buildStoresList();}
   else if(id==='roles'){buildRolesGrid();}
   closeSidebar();
@@ -1691,8 +1812,10 @@ function buildUtil(){
   if(!cat){panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No categories yet. Categories and items are added from the "All Stores (HO)" view.</p></div>';return;}
 
   const panel=document.createElement('div');panel.className='card';
-  let html=`<h3>${cat.label}</h3>`;
-  html+=`<div class="util-header-row"><div class="util-col-name"></div><div class="util-col-label">Opening stock</div><div class="util-col-label">Today's use</div><div class="util-col-label">Total consumed</div><div class="util-col-label">Remaining</div></div>`;
+  let headerHtml=`<h3>${cat.label}</h3>`;
+  headerHtml+=`<div class="util-header-row"><div class="util-col-name"></div><div class="util-col-label">Opening stock</div><div class="util-col-label">Today's use</div><div class="util-col-label">Total consumed</div><div class="util-col-label">Remaining</div></div>`;
+  panel.innerHTML=headerHtml;
+
   cat.items.forEach((item,i)=>{
     const remaining=Math.max(0,item.opening-item.consumed-item.todayQty);
     const totalConsumed=item.consumed+item.todayQty;
@@ -1700,22 +1823,53 @@ function buildUtil(){
     const isEmpty=item.opening>0&&remaining===0;
     const isLow=!isEmpty&&item.opening>0&&reorderLevel>0&&remaining<=reorderLevel;
     const stockBadge=isEmpty?`<span class="badge badge-red">Out of stock</span>`:isLow?`<span class="badge badge-amber">Low stock</span>`:``;
+    const balKey=cat.id+'__'+item.name;
+    const balance=sd.allotments?(sd.allotments.balances[balKey]||0):0;
+    const balBadge=isAdmin?`<span style="font-size:10px;color:var(--teal-dark);margin-left:6px" title="Remaining allotted balance">Allotted: ${balance}</span>`:'';
     const openingCell=isAdmin
-      ?`<div class="util-col-stock"><input class="util-stock-input" type="number" min="0" value="${item.opening}" onchange="setOpening('${cat.id}',${i},this.value)"/></div>`
+      ?`<div class="util-col-stock"><input class="util-stock-input" type="number" min="0" value="${item.opening}" onchange="setOpening('${cat.id}',${i},this.value)"/>${balBadge}</div>`
       :`<div class="util-col-stock"><span class="util-stock-val">${item.opening}</span></div>`;
     const reorderEditor=isAdmin
       ?`<span class="util-reorder-edit" title="Edit low stock alert level">Alert ≤<input type="number" min="0" value="${reorderLevel}" onchange="setReorderLevel('${cat.id}',${i},this.value)"></span>`
       :(reorderLevel>0?`<span class="util-reorder-display">Alert ≤ ${reorderLevel}</span>`:'');
-    html+=`<div class="util-item-row ${isLow&&!isEmpty?'util-row-warn':''} ${isEmpty?'util-row-empty':''}">
-      <div class="util-col-name"><span class="util-item-name">${item.name}</span>${stockBadge}${reorderEditor}</div>
+    const dragHandle=isAdmin?`<span class="drag-handle" title="Drag to reorder">⠿</span>`:'';
+
+    const row=document.createElement('div');
+    row.className=`util-item-row ${isLow&&!isEmpty?'util-row-warn':''} ${isEmpty?'util-row-empty':''}`.trim();
+    row.draggable=isAdmin;
+    row.dataset.idx=i;
+    const deleteBtn=isAdmin?`<button class="cl-delete-btn" title="Remove this item from ${s}" onclick="deleteUtilItemStore('${cat.id}',${i})" style="margin-left:6px"><i class="ti ti-trash" style="font-size:13px"></i></button>`:'';
+    row.innerHTML=`<div class="util-col-name">${dragHandle}<span class="util-item-name">${item.name}</span>${stockBadge}${reorderEditor}${deleteBtn}</div>
       ${openingCell}
       <div class="util-col-stock"><div class="util-qty"><button onclick="changeUtil('${cat.id}',${i},-1)">−</button><span id="uq-${cat.id}-${i}">${item.todayQty}</span><button onclick="changeUtil('${cat.id}',${i},1)">+</button></div></div>
       <div class="util-col-stock"><span class="util-stock-val">${totalConsumed}</span></div>
-      <div class="util-col-stock"><span class="util-stock-val" style="font-weight:600;color:${isEmpty?'#A32D2D':isLow?'#854F0B':'var(--text)'}">${remaining}</span></div>
-    </div>`;
+      <div class="util-col-stock"><span class="util-stock-val" style="font-weight:600;color:${isEmpty?'#A32D2D':isLow?'#854F0B':'var(--text)'}">${remaining}</span></div>`;
+
+    if(isAdmin){
+      row.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',i);row.classList.add('dragging');});
+      row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+      row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drag-over');});
+      row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+      row.addEventListener('drop',e=>{
+        e.preventDefault();row.classList.remove('drag-over');
+        const from=parseInt(e.dataTransfer.getData('text/plain'));
+        const to=parseInt(row.dataset.idx);
+        if(from===to)return;
+        const moved=cat.items.splice(from,1)[0];
+        cat.items.splice(to,0,moved);
+        buildUtil();
+      });
+    }
+    panel.appendChild(row);
   });
-  if(!cat.items.length)html+=`<p style="color:var(--text3);font-size:13px;padding:8px 0">No items yet. Items are added from the "All Stores (HO)" view.</p>`;
-  panel.innerHTML=html;panels.appendChild(panel);
+
+  if(!cat.items.length){
+    const empty=document.createElement('p');
+    empty.style.cssText='color:var(--text3);font-size:13px;padding:8px 0';
+    empty.textContent='No items yet. Items are added from the "All Stores (HO)" view.';
+    panel.appendChild(empty);
+  }
+  panels.appendChild(panel);
 }
 
 function buildUtilHO(){
@@ -1874,7 +2028,8 @@ function setReorderLevel(catId,i,val){
 }
 
 function setOpening(catId,i,val){
-  const sd=storeData[getActiveStore()];if(!sd)return;
+  const s=getActiveStore();
+  const sd=storeData[s];if(!sd)return;
   const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
   const item=cat.items[i];
   const totalConsumed=item.consumed+item.todayQty;
@@ -1882,6 +2037,23 @@ function setOpening(catId,i,val){
   if(newOpening<totalConsumed){
     newOpening=totalConsumed;
     showMsg('util-msg',`Opening stock can't be less than what's already been consumed (${totalConsumed}). Set to ${totalConsumed}.`,'err');
+  }
+  // Allotment balance check — only when opening stock increases
+  const increase=newOpening-item.opening;
+  if(increase>0){
+    const balKey=catId+'__'+item.name;
+    const balance=(sd.allotments&&sd.allotments.balances)?Math.max(0,sd.allotments.balances[balKey]||0):0;
+    if(increase>balance){
+      // Revert input to old value
+      const inputEl=document.querySelector(`.util-stock-input[onchange="setOpening('${catId}',${i},this.value)"]`);
+      if(inputEl)inputEl.value=item.opening;
+      showMsg('util-msg',`Opening stock cannot exceed allotted balance. Remaining allotment for "${item.name}": ${balance} units. Raise a request via Allotments.`,'err');
+      return;
+    }
+    // Deduct from balance
+    if(!sd.allotments)sd.allotments={request:null,balances:{},history:[],rejectedNotifications:[],pendingNotification:false};
+    if(!sd.allotments.balances)sd.allotments.balances={};
+    sd.allotments.balances[balKey]=(sd.allotments.balances[balKey]||0)-increase;
   }
   item.opening=newOpening;buildUtil();
 }
@@ -1949,6 +2121,16 @@ function deleteUtilItemHO(catLabel,itemName){
     const cat=sd.utilCategories.find(c=>c.label===catLabel);
     cat.items=cat.items.filter(it=>it.name!==itemName);
   });
+  buildUtil();
+}
+
+function deleteUtilItemStore(catId,itemIdx){
+  const s=getActiveStore();
+  const sd=storeData[s];if(!sd)return;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  const item=cat.items[itemIdx];if(!item)return;
+  if(!confirm(`Remove "${item.name}" from ${s} only? This only affects this store.`))return;
+  cat.items.splice(itemIdx,1);
   buildUtil();
 }
 
@@ -2386,10 +2568,39 @@ function buildStoresList(){
   const el=document.getElementById('stores-list');if(!el)return;el.innerHTML='';
   if(!stores.length){el.innerHTML='<p style="font-size:13px;color:var(--text3)">No stores added yet.</p>';return;}
   stores.forEach((s,i)=>{
-    el.innerHTML+=`<div class="util-row">
-      <span style="font-weight:500">${s}</span>
-      <button class="btn btn-sm btn-danger" onclick="deleteStore(${i})"><i class="ti ti-trash"></i> Remove</button>
-    </div>`;
+    const row=document.createElement('div');
+    row.className='stores-list-row';
+    row.draggable=true;
+    row.dataset.idx=i;
+    row.innerHTML=`<span class="drag-handle" title="Drag to reorder">⠿</span>
+      <span style="font-weight:500;flex:1">${s}</span>
+      <button class="btn btn-sm btn-danger" onclick="deleteStore(${i})"><i class="ti ti-trash"></i> Remove</button>`;
+    row.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',i);row.classList.add('dragging');});
+    row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+    row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drag-over');});
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',e=>{
+      e.preventDefault();row.classList.remove('drag-over');
+      const from=parseInt(e.dataTransfer.getData('text/plain'));
+      const to=parseInt(row.dataset.idx);
+      if(from===to)return;
+      // Reorder stores array
+      const moved=stores.splice(from,1)[0];
+      stores.splice(to,0,moved);
+      // Reorder storeData keys accordingly
+      const movedData=storeData[moved];
+      buildStoresList();
+      populateStoreSelect();
+      buildDashStoreStatus();
+      buildDashLowStockBar();
+      buildDashChartStoreBar();
+      // Rebuild any page that has a store switcher
+      if(document.getElementById('page-checklist').classList.contains('active'))rebuildChecklists();
+      if(document.getElementById('page-utilisation').classList.contains('active'))buildUtil();
+      if(document.getElementById('page-allotments').classList.contains('active'))buildAllotments();
+      if(document.getElementById('page-staff').classList.contains('active'))buildStaff();
+    });
+    el.appendChild(row);
   });
 }
 
@@ -2546,6 +2757,7 @@ function buildQuickActions(){
   const all=[
     {perm:'checklist',page:'checklist',nav:'nav-checklist',icon:'ti-checklist',label:'Checklists & Jobs',sub:'Opening, closing & maintenance'},
     {perm:'utilisation',page:'utilisation',nav:'nav-utilisation',icon:'ti-chart-bar',label:'Utilisation',sub:'Daily consumption'},
+    {perm:'allotments',page:'allotments',nav:'nav-allotments',icon:'ti-package',label:'Allotments',sub:'Request & approve stock'},
     {perm:'staff',page:'staff',nav:'nav-staff',icon:'ti-id-badge',label:'Staff & HR',sub:'Attendance records'},
     {perm:'users',page:'users',nav:'nav-users',icon:'ti-user-plus',label:'Manage users',sub:'Add or edit accounts'},
   ];
@@ -2562,7 +2774,7 @@ function buildQuickActions(){
 const SHEETS_API_URL='https://script.google.com/macros/s/AKfycbxYWn4nrPHSj6EgSxEkT1T_guj2XtU4pl82bVTmnz-d5DKu5SOFOBTOtOO1FTqBA4c5Rw/exec';
 
 function getAppState(){
-  return JSON.stringify({users,roles,stores,storeData});
+  return JSON.stringify({users,roles,stores,storeData,sessionLog});
 }
 
 const LOCAL_STATE_KEY='talla_local_state';
@@ -2593,6 +2805,11 @@ function migrateStoreData(){
     if(sd.openedTime===undefined)sd.openedTime=null;
     if(!sd.utilLastDate)sd.utilLastDate=todayStr();
     if(!sd.utilHistory)sd.utilHistory={};
+    if(!sd.allotments)sd.allotments={request:null,balances:{},history:[],rejectedNotifications:[],pendingNotification:false};
+    if(!sd.allotments.history)sd.allotments.history=[];
+    if(!sd.allotments.balances)sd.allotments.balances={};
+    if(!sd.allotments.rejectedNotifications)sd.allotments.rejectedNotifications=[];
+    if(sd.allotments.pendingNotification===undefined)sd.allotments.pendingNotification=false;
     sd.utilCategories.forEach(cat=>{
       (cat.items||[]).forEach(item=>{
         if(item.reorderLevel===undefined)item.reorderLevel=5;
@@ -2607,13 +2824,32 @@ function migrateStoreData(){
   });
 }
 
+function migrateRoles(){
+  // Ensure every role has all permissions it should have by default.
+  // This handles the case where old cloud data has roles missing newly added permissions.
+  const mgmt=roles.find(r=>r.id==='management');
+  if(mgmt){
+    // Management always gets ALL perms (it's protected and should have everything)
+    const allKeys=ALL_PERMS.map(p=>p.key);
+    allKeys.forEach(k=>{ if(!mgmt.perms.includes(k))mgmt.perms.push(k); });
+  }
+  const mgr=roles.find(r=>r.id==='manager');
+  if(mgr){
+    // Store Manager should always have allotments perm
+    if(!mgr.perms.includes('allotments'))mgr.perms.push('allotments');
+  }
+}
+
 function applyAppState(state){
   if(!state||typeof state!=='object'||!state.storeData)return false;
   if(state.users)users=state.users;
   if(state.roles)roles=state.roles;
   if(state.stores)stores=state.stores;
+  if(Array.isArray(state.sessionLog))sessionLog=state.sessionLog;
   storeData=state.storeData;
+  migrateRoles();
   migrateStoreData();
+  pruneSessionLog();
   return true;
 }
 
@@ -2712,6 +2948,7 @@ document.addEventListener('input',scheduleInteractionSync,true);
 
 window.addEventListener('beforeunload',()=>{
   if(currentUser){
+    endSessionEntry('browser_close');
     try{ navigator.sendBeacon(SHEETS_API_URL,new Blob([getAppState()],{type:'text/plain;charset=utf-8'})); }catch(e){}
   }
 });
@@ -2781,6 +3018,7 @@ function recordActivity(){
   if(now-lastActivityWrite<10000)return;
   lastActivityWrite=now;
   saveSession();
+  updateSessionActivity(now);
 }
 document.addEventListener('click',recordActivity,true);
 document.addEventListener('keydown',recordActivity,true);
@@ -2794,10 +3032,538 @@ setInterval(()=>{
     const sess=raw?JSON.parse(raw):null;
     const lastActivity=sess?sess.lastActivity:lastActivityWrite;
     if(Date.now()-lastActivity>SESSION_TIMEOUT_MS){
+      endSessionEntry('timeout');
       doLogout();
     }
   }catch(e){}
 },15000);
+
+// ===== ALLOTMENTS MODULE =====
+let activeAlStore=null;
+
+function getAlStore(){
+  if(currentUser&&currentUser.store!=='all')return currentUser.store;
+  return activeAlStore||stores[0];
+}
+
+function buildAllotments(){
+  const bar=document.getElementById('al-store-bar');
+  if(currentUser&&currentUser.store!=='all'){
+    bar.style.display='none';
+    activeAlStore=currentUser.store;
+  } else {
+    bar.style.display='flex';
+    if(!activeAlStore||!stores.includes(activeAlStore))activeAlStore=stores[0];
+    // Build store switcher manually so we update activeAlStore (not activeStore)
+    bar.innerHTML='';
+    stores.forEach(s=>{
+      const btn=document.createElement('button');
+      btn.className='store-btn'+(activeAlStore===s?' active':'');
+      btn.textContent=s;
+      btn.onclick=()=>{activeAlStore=s;buildAllotments();};
+      bar.appendChild(btn);
+    });
+  }
+  const histTab=document.getElementById('al-history');
+  if(histTab&&!histTab.classList.contains('hidden'))buildAlHistory();
+  else buildAlRequests();
+}
+
+function switchAlTab(btn,targetId){
+  btn.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  ['al-requests','al-history'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==targetId));
+  if(targetId==='al-history')buildAlHistory();
+  else buildAlRequests();
+}
+
+function buildAlRequests(){
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd)return;
+  const isManager=currentUser&&currentUser.store!=='all';
+  const canApprove=hasPerm('allotments_approve');
+  ['al-raise-card','al-pending-card','al-approve-card','al-no-pending'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+
+  if(isManager){
+    // Store manager flow — raise or view pending
+    const req=sd.allotments.request;
+    if(!req){
+      document.getElementById('al-raise-card').style.display='block';
+      buildAlCatSelect(s);
+    } else {
+      document.getElementById('al-pending-card').style.display='block';
+      document.getElementById('al-pending-content').innerHTML=`
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          <h3 style="margin:0">Pending Request <span class="badge badge-amber">Pending</span></h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="startEditAllotmentRequest()">Edit</button>
+            <button class="btn btn-danger" onclick="cancelAllotmentRequest()">Cancel</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Raised by <strong>${req.raisedBy}</strong> on ${new Date(req.raisedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+        ${req.notes?`<div style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:8px 12px;background:var(--bg2);border-radius:var(--radius)">📝 ${req.notes}</div>`:''}
+        ${buildAlItemTable(req.items,false)}`;
+    }
+  } else if(canApprove){
+    // Management flow — can approve/reject AND raise on behalf of store
+    const req=sd.allotments.request;
+    if(req){
+      // Pending request exists — show approve/reject panel
+      document.getElementById('al-approve-card').style.display='block';
+      document.getElementById('al-approve-content').innerHTML=`
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px">From <strong>${req.raisedBy}</strong> · ${new Date(req.raisedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+        ${req.notes?`<div style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:8px 12px;background:var(--bg2);border-radius:var(--radius)">📝 ${req.notes}</div>`:''}
+        ${buildAlItemTable(req.items,true)}
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-primary" onclick="approveAllotment()">Approve</button>
+          <button class="btn btn-danger" onclick="rejectAllotment()">Reject</button>
+        </div>`;
+    } else {
+      // No pending request — show raise form so management can raise on behalf of store
+      document.getElementById('al-raise-card').style.display='block';
+      document.getElementById('al-no-pending').style.display='block';
+      buildAlCatSelect(s);
+    }
+  }
+}
+
+function buildAlItemTable(items,editable){
+  const cols=`2fr 1fr${editable?' 1fr':''}`;
+  let html=`<div class="hist-daily-header" style="grid-template-columns:${cols}">
+    <div>Item</div><div>Requested Qty</div>${editable?'<div>Approve Qty</div>':''}
+  </div>`;
+  items.forEach((it,idx)=>{
+    const approveInput=editable
+      ?`<div><input type="number" min="0" value="${it.requestedQty}" id="al-approve-qty-${idx}" style="width:70px;padding:4px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);text-align:center"/></div>`
+      :'';
+    html+=`<div class="hist-daily-row" style="grid-template-columns:${cols}">
+      <div><span style="font-size:11px;color:var(--text3)">${it.catLabel} · </span>${it.itemName}</div>
+      <div>${it.requestedQty}</div>${approveInput}
+    </div>`;
+  });
+  return `<div class="hist-matrix" style="margin-top:8px">${html}</div>`;
+}
+
+function buildAlCatSelect(s){
+  const sd=storeData[s];if(!sd)return;
+  const sel=document.getElementById('al-cat-select');if(!sel)return;
+  const prevVal=sel.value;
+  if(!sd.utilCategories.length){
+    sel.innerHTML='<option value="">No categories yet</option>';
+    const container=document.getElementById('al-item-inputs');
+    if(container)container.innerHTML='<p style="font-size:13px;color:var(--text3)">No stock categories set up for this store yet. Ask Management to add categories via Utilisation.</p>';
+    return;
+  }
+  sel.innerHTML=sd.utilCategories.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  if(sd.utilCategories.find(c=>c.id===prevVal))sel.value=prevVal;
+  buildAlItemInputs();
+}
+
+function buildAlItemInputs(){
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd)return;
+  const catId=document.getElementById('al-cat-select')?.value;
+  const cat=sd.utilCategories.find(c=>c.id===catId);
+  const container=document.getElementById('al-item-inputs');if(!container)return;
+  if(!cat||!cat.items.length){
+    container.innerHTML='<p style="font-size:13px;color:var(--text3)">No items in this category.</p>';
+    return;
+  }
+  container.innerHTML=cat.items.map((it,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:13px;color:var(--text);min-width:180px">${it.name}</span>
+      <input type="number" min="0" value="0" id="al-item-qty-${i}" style="width:80px;padding:6px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);text-align:center"/>
+      <span style="font-size:11px;color:var(--teal-dark)">Balance: ${(sd.allotments.balances[catId+'__'+it.name])||0}</span>
+    </div>`).join('');
+}
+
+function submitAllotmentRequest(){
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd)return;
+  if(sd.allotments.request){showMsg('al-raise-msg','You already have a pending request. Edit or cancel it first.','err');return;}
+  const catId=document.getElementById('al-cat-select')?.value;
+  const cat=sd.utilCategories.find(c=>c.id===catId);if(!cat)return;
+  const items=[];
+  cat.items.forEach((it,i)=>{
+    const qty=parseInt(document.getElementById('al-item-qty-'+i)?.value)||0;
+    if(qty>0)items.push({catId,catLabel:cat.label,itemName:it.name,requestedQty:qty,approvedQty:qty});
+  });
+  if(!items.length){showMsg('al-raise-msg','Enter a quantity greater than 0 for at least one item.','err');return;}
+  const notes=document.getElementById('al-notes')?.value.trim()||'';
+  sd.allotments.request={id:Date.now()+'-'+s,raisedBy:currentUser.username,raisedAt:new Date().toISOString(),notes,items};
+  sd.allotments.pendingNotification=true;
+  document.getElementById('al-notes').value='';
+  buildAllotments();
+  buildDashAllotmentNotif();
+}
+
+function startEditAllotmentRequest(){
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd||!sd.allotments.request)return;
+  const req=sd.allotments.request;
+  const catId=req.items[0]?.catId;
+  sd.allotments.request=null;
+  document.getElementById('al-pending-card').style.display='none';
+  document.getElementById('al-raise-card').style.display='block';
+  buildAlCatSelect(s);
+  if(catId){
+    const sel=document.getElementById('al-cat-select');
+    if(sel)sel.value=catId;
+    buildAlItemInputs();
+    const cat=sd.utilCategories.find(c=>c.id===catId);
+    if(cat)cat.items.forEach((it,i)=>{
+      const prev=req.items.find(r=>r.itemName===it.name);
+      const inp=document.getElementById('al-item-qty-'+i);
+      if(inp&&prev)inp.value=prev.requestedQty;
+    });
+  }
+  const notesEl=document.getElementById('al-notes');
+  if(notesEl&&req.notes)notesEl.value=req.notes;
+  // Don't set pendingNotification=true until manager re-submits
+  sd.allotments.pendingNotification=false;
+}
+
+function cancelAllotmentRequest(){
+  if(!confirm('Cancel this request?'))return;
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd)return;
+  sd.allotments.request=null;
+  sd.allotments.pendingNotification=false;
+  buildAllotments();
+  buildDashAllotmentNotif();
+}
+
+function approveAllotment(){
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd||!sd.allotments.request)return;
+  const req=sd.allotments.request;
+  req.items.forEach((it,idx)=>{
+    it.approvedQty=Math.max(0,parseInt(document.getElementById('al-approve-qty-'+idx)?.value)||0);
+  });
+  if(!sd.allotments.balances)sd.allotments.balances={};
+  req.items.forEach(it=>{
+    if(it.approvedQty>0){
+      const key=it.catId+'__'+it.itemName;
+      sd.allotments.balances[key]=(sd.allotments.balances[key]||0)+it.approvedQty;
+    }
+  });
+  sd.allotments.history.unshift({
+    id:req.id,raisedBy:req.raisedBy,raisedAt:req.raisedAt,
+    approvedBy:currentUser.username,approvedAt:new Date().toISOString(),
+    notes:req.notes||'',items:req.items
+  });
+  sd.allotments.request=null;
+  sd.allotments.pendingNotification=false;
+  buildAllotments();
+  buildDashAllotmentNotif();
+}
+
+function rejectAllotment(){
+  if(!confirm('Reject this request? The store manager will be notified.'))return;
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd||!sd.allotments.request)return;
+  const req=sd.allotments.request;
+  sd.allotments.rejectedNotifications.push({
+    id:req.id,
+    date:new Date().toISOString(),
+    itemSummary:req.items.map(it=>`${it.itemName} (${it.requestedQty})`).join(', ')
+  });
+  sd.allotments.request=null;
+  sd.allotments.pendingNotification=false;
+  buildAllotments();
+  buildDashAllotmentNotif();
+}
+
+function dismissRejectionNotif(){
+  const s=currentUser&&currentUser.store!=='all'?currentUser.store:getAlStore();
+  const sd=storeData[s];if(!sd)return;
+  sd.allotments.rejectedNotifications=[];
+  buildDashAllotmentNotif();
+}
+
+function buildDashAllotmentNotif(){
+  const el=document.getElementById('dash-allotment-notif');if(!el)return;
+  if(!currentUser){el.style.display='none';return;}
+  const isManager=currentUser.store!=='all';
+  let html='';
+  if(isManager){
+    const sd=storeData[currentUser.store];if(!sd){el.style.display='none';return;}
+    const rejects=sd.allotments.rejectedNotifications||[];
+    if(rejects.length>0){
+      html=`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <i class="ti ti-circle-x" style="color:#A32D2D;font-size:20px"></i>
+          <div><div style="font-size:13px;font-weight:600;color:#A32D2D">${rejects.length} allotment request${rejects.length>1?'s':''} rejected</div>
+          <div style="font-size:11px;color:#B91C1C;margin-top:2px">Please raise a new request via Allotments.</div></div>
+        </div>
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="dismissRejectionNotif()">Dismiss</button>
+      </div>`;
+    }
+  } else {
+    const pending=stores.filter(s=>{const sd=storeData[s];return sd&&sd.allotments&&sd.allotments.pendingNotification&&sd.allotments.request;});
+    if(pending.length>0){
+      html=`<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <i class="ti ti-package" style="color:var(--teal-dark);font-size:20px"></i>
+          <div><div style="font-size:13px;font-weight:600;color:var(--teal-dark)">${pending.length} store${pending.length>1?'s have':' has'} a pending allotment request</div>
+          <div style="font-size:11px;color:var(--teal-dark);margin-top:2px">${pending.join(', ')}</div></div>
+        </div>
+        <button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="showPage('allotments',document.getElementById('nav-allotments'))">Review</button>
+      </div>`;
+    }
+  }
+  el.innerHTML=html;
+  el.style.display=html?'block':'none';
+}
+
+function buildAlHistory(){
+  const s=getAlStore();
+  const sd=storeData[s];if(!sd)return;
+  const view=document.getElementById('al-hist-view')?.value||'monthly';
+  const history=sd.allotments.history||[];
+  const tabBar=document.getElementById('al-hist-cat-tabs');
+  const panels=document.getElementById('al-hist-panels');
+
+  // Collect categories that appear in history
+  const catMap={};
+  history.forEach(entry=>{
+    entry.items.forEach(it=>{
+      if(!catMap[it.catId])catMap[it.catId]={label:it.catLabel,items:new Set()};
+      catMap[it.catId].items.add(it.itemName);
+    });
+  });
+  // Also include current categories (in case history is empty but categories exist)
+  sd.utilCategories.forEach(cat=>{
+    if(!catMap[cat.id])catMap[cat.id]={label:cat.label,items:new Set()};
+    cat.items.forEach(it=>catMap[cat.id].items.add(it.name));
+  });
+
+  const catIds=Object.keys(catMap);
+  tabBar.innerHTML='';
+  // Reset active cat if it's not valid for this store
+  let activeAlHistCat=tabBar.dataset.active;
+  if(!activeAlHistCat||!catIds.includes(activeAlHistCat)){
+    activeAlHistCat=catIds[0]||null;
+    tabBar.dataset.active=activeAlHistCat||'';
+  }
+  catIds.forEach(catId=>{
+    const btn=document.createElement('button');
+    btn.className='tab'+(activeAlHistCat===catId?' active':'');
+    btn.textContent=catMap[catId].label;
+    btn.onclick=()=>{tabBar.dataset.active=catId;buildAlHistory();};
+    tabBar.appendChild(btn);
+  });
+
+  panels.innerHTML='';
+  if(!activeAlHistCat){
+    panels.innerHTML='<div class="card"><p style="color:var(--text3);font-size:13px">No allotment history yet.</p></div>';
+    return;
+  }
+
+  const itemNames=[...catMap[activeAlHistCat].items];
+  let periods=view==='yearly'?getLastNYears(3):getLastNMonths(view==='weekly'?6:12);
+  const getPeriodKey=(dateStr)=>view==='yearly'?dateStr.slice(0,4):dateStr.slice(0,7);
+
+  // Build lookup: period -> itemName -> total approved qty
+  const lookup={};
+  periods.forEach(p=>{lookup[p]={};itemNames.forEach(n=>{lookup[p][n]=0;});});
+  history.forEach(entry=>{
+    const key=getPeriodKey(entry.approvedAt.slice(0,10));
+    if(!lookup[key])return;
+    entry.items.forEach(it=>{
+      if(it.catId!==activeAlHistCat)return;
+      if(it.itemName in lookup[key])lookup[key][it.itemName]+=(it.approvedQty||0);
+    });
+  });
+
+  const periodLabels=view==='yearly'?periods:periods.map(p=>{
+    const [y,m]=p.split('-');
+    return new Date(+y,+m-1,1).toLocaleDateString('en-IN',{month:'short',year:'numeric'}).toUpperCase();
+  });
+
+  const gridCols=`2fr ${periods.map(()=>'1fr').join(' ')}`;
+  const panel=document.createElement('div');panel.className='card';
+  let html=`<div class="hist-daily-header" style="grid-template-columns:${gridCols}"><div>ITEM</div>${periodLabels.map(l=>`<div>${l}</div>`).join('')}</div>`;
+  itemNames.forEach(name=>{
+    const vals=periods.map(p=>{
+      const v=lookup[p]?.[name]||0;
+      return v>0?`<span style="color:var(--teal-dark);font-weight:600">${v}</span>`:`<span style="color:var(--text3)">—</span>`;
+    });
+    html+=`<div class="hist-daily-row" style="grid-template-columns:${gridCols}"><div>${name}</div>${vals.map(v=>`<div>${v}</div>`).join('')}</div>`;
+  });
+  panel.innerHTML=html;panels.appendChild(panel);
+}
+
+// ===== SESSIONS MODULE =====
+const SESSION_ONLINE_THRESHOLD_MS = 15 * 60 * 1000;
+let currentSessionId = null;
+let sessionsAutoRefresh = null;
+
+function pruneSessionLog(){
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  sessionLog = sessionLog.filter(s => new Date(s.loginAt).getTime() > cutoff);
+}
+
+function startSessionEntry(){
+  if(!currentUser) return;
+  currentSessionId = 'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+  sessionLog.push({
+    id: currentSessionId,
+    username: currentUser.username,
+    fullname: currentUser.fullname,
+    store: currentUser.store === 'all' ? 'All Stores (Management)' : currentUser.store,
+    roleId: currentUser.roleId,
+    loginAt: new Date().toISOString(),
+    lastActivity: new Date().toISOString(),
+    logoutAt: null,
+    logoutType: null
+  });
+  pruneSessionLog();
+}
+
+function updateSessionActivity(nowMs){
+  if(!currentSessionId) return;
+  const entry = sessionLog.find(s => s.id === currentSessionId);
+  if(entry) entry.lastActivity = new Date(nowMs).toISOString();
+}
+
+function endSessionEntry(type){
+  if(!currentSessionId) return;
+  const entry = sessionLog.find(s => s.id === currentSessionId);
+  if(entry){ entry.logoutAt = new Date().toISOString(); entry.logoutType = type; }
+  currentSessionId = null;
+}
+
+function isSessionOnline(entry){
+  if(entry.logoutAt) return false;
+  return (Date.now() - new Date(entry.lastActivity).getTime()) < SESSION_ONLINE_THRESHOLD_MS;
+}
+
+function fmtDuration(ms){
+  if(ms<0) ms=0;
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  if(h>0) return `${h}h ${m}m`;
+  if(m>0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+function fmtSessionTime(iso){
+  if(!iso) return '—';
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+
+         d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+function logoutTypeLabel(type){
+  if(!type) return '<span style="color:var(--text3)">Active / unknown</span>';
+  if(type==='manual') return '<span style="color:var(--teal-dark)">Signed out</span>';
+  if(type==='timeout') return '<span style="color:#854F0B">Timed out</span>';
+  if(type==='browser_close') return '<span style="color:var(--text2)">Browser closed</span>';
+  return type;
+}
+
+function buildSessionsPage(){
+  const storeFilter=document.getElementById('sess-filter-store');
+  const userFilter=document.getElementById('sess-filter-user');
+  const prevStore=storeFilter?.value||'all';
+  const prevUser=userFilter?.value||'all';
+  if(storeFilter){
+    const storeSet=[...new Set(sessionLog.map(s=>s.store))].sort();
+    storeFilter.innerHTML='<option value="all">All stores</option>'+
+      storeSet.map(s=>`<option value="${s}"${s===prevStore?' selected':''}>${s}</option>`).join('');
+  }
+  if(userFilter){
+    const userSet=[...new Set(sessionLog.map(s=>s.username))].sort();
+    userFilter.innerHTML='<option value="all">All users</option>'+
+      userSet.map(u=>{
+        const e=sessionLog.find(s=>s.username===u);
+        return `<option value="${u}"${u===prevUser?' selected':''}>${e?.fullname||u}</option>`;
+      }).join('');
+  }
+
+  // Currently online
+  const onlineEl=document.getElementById('sess-online-list');
+  const online=sessionLog.filter(s=>isSessionOnline(s));
+  if(onlineEl){
+    if(!online.length){
+      onlineEl.innerHTML='<p style="font-size:13px;color:var(--text3)">No one online right now.</p>';
+    } else {
+      onlineEl.innerHTML=online.map(s=>{
+        const since=fmtDuration(Date.now()-new Date(s.loginAt).getTime());
+        const lastAct=fmtDuration(Date.now()-new Date(s.lastActivity).getTime());
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);flex-wrap:wrap">
+          <span style="width:9px;height:9px;border-radius:50%;background:#22C55E;flex-shrink:0"></span>
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:13px;font-weight:600">${s.fullname}</div>
+            <div style="font-size:11px;color:var(--text3)">${s.store}</div>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">Online for <strong>${since}</strong></div>
+          <div style="font-size:11px;color:var(--text3)">Last active ${lastAct} ago</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Filter
+  const days=parseInt(document.getElementById('sess-filter-days')?.value||30);
+  const fStore=document.getElementById('sess-filter-store')?.value||'all';
+  const fUser=document.getElementById('sess-filter-user')?.value||'all';
+  const cutoff=Date.now()-days*24*60*60*1000;
+  let filtered=[...sessionLog]
+    .filter(s=>new Date(s.loginAt).getTime()>=cutoff)
+    .filter(s=>fStore==='all'||s.store===fStore)
+    .filter(s=>fUser==='all'||s.username===fUser)
+    .sort((a,b)=>new Date(b.loginAt)-new Date(a.loginAt));
+
+  const countEl=document.getElementById('sess-count');
+  if(countEl) countEl.textContent=`${filtered.length} session${filtered.length!==1?'s':''}`;
+
+  const tableEl=document.getElementById('sess-log-table');
+  if(!tableEl) return;
+  if(!filtered.length){
+    tableEl.innerHTML='<p style="padding:20px;font-size:13px;color:var(--text3)">No sessions in this period.</p>';
+  } else {
+    const hStyle='font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;padding:10px 16px;background:var(--bg2);border-bottom:0.5px solid var(--border)';
+    const cStyle='padding:11px 16px;font-size:13px;border-bottom:0.5px solid var(--border);vertical-align:middle';
+    let html=`<table style="width:100%;border-collapse:collapse"><thead><tr>
+      ${['User','Store','Login time','Last active','Duration','End reason','Status'].map(c=>`<th style="${hStyle};text-align:left">${c}</th>`).join('')}
+    </tr></thead><tbody>`;
+    filtered.forEach(s=>{
+      const online=isSessionOnline(s);
+      const endTime=s.logoutAt||s.lastActivity;
+      const durMs=new Date(endTime).getTime()-new Date(s.loginAt).getTime();
+      const statusBadge=online
+        ?`<span class="badge" style="background:#DCFCE7;color:#15803D">● Online</span>`
+        :`<span class="badge" style="background:var(--bg2);color:var(--text3)">Offline</span>`;
+      const lastActStr=online
+        ?`<span style="color:var(--teal-dark)">${fmtDuration(Date.now()-new Date(s.lastActivity).getTime())} ago</span>`
+        :fmtSessionTime(s.lastActivity);
+      html+=`<tr>
+        <td style="${cStyle}"><div style="font-weight:500">${s.fullname}</div><div style="font-size:11px;color:var(--text3)">${s.username}</div></td>
+        <td style="${cStyle}">${s.store}</td>
+        <td style="${cStyle}">${fmtSessionTime(s.loginAt)}</td>
+        <td style="${cStyle}">${lastActStr}</td>
+        <td style="${cStyle}">${fmtDuration(durMs)}</td>
+        <td style="${cStyle}">${logoutTypeLabel(s.logoutType)}</td>
+        <td style="${cStyle}">${statusBadge}</td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+    tableEl.innerHTML=html;
+  }
+  const label=document.getElementById('sess-refresh-label');
+  if(label) label.textContent='Last updated: '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function startSessionsAutoRefresh(){
+  stopSessionsAutoRefresh();
+  sessionsAutoRefresh=setInterval(()=>{
+    if(document.getElementById('page-sessions')?.classList.contains('active')) buildSessionsPage();
+  },30000);
+}
+function stopSessionsAutoRefresh(){ if(sessionsAutoRefresh){clearInterval(sessionsAutoRefresh);sessionsAutoRefresh=null;} }
 
 initAllStores();
 bootstrapCloud().then(()=>{
@@ -2805,6 +3571,7 @@ bootstrapCloud().then(()=>{
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-screen').classList.remove('hidden');
     saveSession();
+    startSessionEntry(); // Log page refresh as a new session entry
     initApp();
   }
   document.getElementById('cloud-loading-overlay').classList.add('hidden');
