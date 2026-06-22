@@ -982,6 +982,7 @@ function initApp(){
   buildUtil();buildStaff();buildUsersTable();buildRolesGrid();populateRoleSelect();populateStoreSelect();buildStoresList();
   showPage('dashboard',document.getElementById('nav-dashboard'));
   startAutoSync();
+  startNotifPolling();
   startSessionsAutoRefresh();
   buildDashAllotmentNotif();
 }
@@ -1279,7 +1280,28 @@ function showPage(id,navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');
   if(navEl)navEl.classList.add('active');
-  if(id==='dashboard'){buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();buildDashAllotmentNotif();}
+  if(id==='dashboard'){
+    buildDashStoreStatus();buildDashLowStockBar();buildDashChartStoreBar();buildDashAllotmentNotif();
+    // Pull latest cloud state immediately to catch any notifications from other users
+    if(currentUser){
+      loadFromCloud().then(state=>{
+        if(!state)return;
+        stores.forEach(s=>{
+          const cloud=state.storeData?.[s]; const local=storeData[s];
+          if(!cloud||!local)return;
+          if(cloud.allotments){
+            local.allotments.request=cloud.allotments.request;
+            local.allotments.pendingNotification=cloud.allotments.pendingNotification;
+            local.allotments.rejectedNotifications=cloud.allotments.rejectedNotifications||[];
+            local.allotments.balances=cloud.allotments.balances||{};
+            local.allotments.history=cloud.allotments.history||[];
+          }
+        });
+        if(Array.isArray(state.sessionLog))sessionLog=state.sessionLog;
+        buildDashAllotmentNotif();
+      }).catch(()=>{});
+    }
+  }
   else if(id==='checklist'){rebuildChecklists();}
   else if(id==='utilisation'){buildUtil();}
   else if(id==='allotments'){buildAllotments();}
@@ -2928,11 +2950,60 @@ async function manualSync(){
 }
 
 let autoSyncInterval=null;
+let notifPollInterval=null;
+
 function startAutoSync(){
   if(autoSyncInterval)clearInterval(autoSyncInterval);
   autoSyncInterval=setInterval(()=>{ if(currentUser)manualSync(); },60000);
 }
-function stopAutoSync(){ if(autoSyncInterval){clearInterval(autoSyncInterval);autoSyncInterval=null;} if(interactionSyncTimer){clearTimeout(interactionSyncTimer);interactionSyncTimer=null;} }
+function stopAutoSync(){
+  if(autoSyncInterval){clearInterval(autoSyncInterval);autoSyncInterval=null;}
+  if(interactionSyncTimer){clearTimeout(interactionSyncTimer);interactionSyncTimer=null;}
+  if(notifPollInterval){clearInterval(notifPollInterval);notifPollInterval=null;}
+}
+
+// Silently pull cloud state every 30s to pick up notifications raised by other users
+// (requests from store managers → Management dashboard, rejections → manager dashboard)
+function startNotifPolling(){
+  if(notifPollInterval)clearInterval(notifPollInterval);
+  notifPollInterval=setInterval(async()=>{
+    if(!currentUser)return;
+    try{
+      const state=await loadFromCloud();
+      if(!state)return;
+      // Snapshot relevant notification fields before applying
+      const prevPending=JSON.stringify(stores.map(s=>storeData[s]?.allotments?.pendingNotification));
+      const prevRejects=JSON.stringify(stores.map(s=>storeData[s]?.allotments?.rejectedNotifications?.length||0));
+      // Apply cloud state but preserve our own unsaved local changes:
+      // Only update allotments notification fields, session log and store data — don't wipe local UI state
+      stores.forEach(s=>{
+        const cloud=state.storeData?.[s];
+        const local=storeData[s];
+        if(!cloud||!local)return;
+        // Merge: take cloud's allotments notification state (requests, rejections, pendingNotification)
+        // but keep local opening/todayQty/consumed values (user may have unsaved changes)
+        if(cloud.allotments){
+          local.allotments.request=cloud.allotments.request;
+          local.allotments.pendingNotification=cloud.allotments.pendingNotification;
+          local.allotments.rejectedNotifications=cloud.allotments.rejectedNotifications||[];
+          local.allotments.balances=cloud.allotments.balances||{};
+          local.allotments.history=cloud.allotments.history||[];
+        }
+      });
+      if(Array.isArray(state.sessionLog))sessionLog=state.sessionLog;
+      // Check if notification state changed
+      const newPending=JSON.stringify(stores.map(s=>storeData[s]?.allotments?.pendingNotification));
+      const newRejects=JSON.stringify(stores.map(s=>storeData[s]?.allotments?.rejectedNotifications?.length||0));
+      if(newPending!==prevPending||newRejects!==prevRejects){
+        buildDashAllotmentNotif();
+        // Also refresh active page if it's allotments
+        if(document.getElementById('page-allotments')?.classList.contains('active')) buildAllotments();
+      }
+      // Always refresh sessions page if open
+      if(document.getElementById('page-sessions')?.classList.contains('active')) buildSessionsPage();
+    }catch(e){ /* silent — don't show errors for background poll */ }
+  },30000);
+}
 
 // Any click/change/input while logged in schedules a sync a few seconds later.
 // Debounced so a burst of actions (e.g. ticking several checklist items) results in one sync.
